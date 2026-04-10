@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -58,6 +59,20 @@ export function TeacherForm({ open, onOpenChange, onSubmit, teacher }: TeacherFo
       status: "active",
     },
   });
+
+  useEffect(() => {
+    if (open) {
+      form.reset(teacher || {
+        name: "",
+        email: "",
+        phone: "",
+        subject: "",
+        role: "GURU",
+        password: "",
+        status: "active",
+      });
+    }
+  }, [open, teacher, form]);
 
   const handleSubmit = async (data: CreateTeacherData) => {
     await onSubmit(data);

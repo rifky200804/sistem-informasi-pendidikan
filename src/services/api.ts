@@ -32,9 +32,10 @@ api.interceptors.response.use(
   (error) => {
     // Handle specific error cases here if needed (e.g., 401 logout)
     if (error.response?.status === 401) {
-        // Optional: Trigger logout or redirect
-        // localStorage.removeItem('token');
-        // window.location.href = '/login';
+        // Trigger logout and redirect
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/auth/login';
     }
     return Promise.reject(error.response?.data || error.message);
   }

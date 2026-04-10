@@ -21,7 +21,7 @@ export interface CreateAnecdoteData {
   category: 'prestasi' | 'perilaku' | 'kesehatan' | 'umum';
 }
 
-export interface UpdateAnecdoteData extends Partial<CreateAnecdoteData> {}
+export type UpdateAnecdoteData = Partial<CreateAnecdoteData>;
 
 export const anecdoteService = {
   async getAll(): Promise<Anecdote[]> {

@@ -29,18 +29,22 @@ let reportsData = [...INITIAL_REPORTS];
 
 export const reportService = {
   async getAll(): Promise<Report[]> {
-    return api.get<Report[]>('/reports');
+    const response = await api.get<Report[]>('/reports');
+    return response.data;
   },
 
   async getById(id: string): Promise<Report> {
-    return api.get<Report>(`/reports/${id}`);
+    const response = await api.get<Report>(`/reports/${id}`);
+    return response.data;
   },
 
   async create(data: CreateReportData): Promise<Report> {
-    return api.post<Report>('/reports', data);
+    const response = await api.post<Report>('/reports', data);
+    return response.data;
   },
 
   async download(id: string, format: 'pdf' | 'csv'): Promise<Blob> {
+    const token = localStorage.getItem('token');
     const response = await fetch(`${import.meta.env.VITE_API_URL}/reports/${id}/download?format=${format}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -55,6 +59,6 @@ export const reportService = {
   },
 
   async delete(id: string): Promise<void> {
-    return api.delete<void>(`/reports/${id}`);
+    await api.delete<void>(`/reports/${id}`);
   },
 };

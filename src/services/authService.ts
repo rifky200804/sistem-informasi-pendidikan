@@ -31,18 +31,21 @@ const DUMMY_USERS = [
 
 export const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    return api.post<AuthResponse>('/auth/login', credentials);
+    const response = await api.post<AuthResponse>('/auth/login', credentials);
+    return response.data;
   },
 
   async signup(data: SignupData): Promise<AuthResponse> {
-    return api.post<AuthResponse>('/auth/signup', data);
+    const response = await api.post<AuthResponse>('/auth/signup', data);
+    return response.data;
   },
 
   async logout(): Promise<void> {
-    return api.post<void>('/auth/logout', {});
+    await api.post<void>('/auth/logout', {});
   },
 
   async getCurrentUser(token: string): Promise<User> {
-    return api.get<User>('/auth/me');
+    const response = await api.get<User>('/auth/me');
+    return response.data;
   },
 };

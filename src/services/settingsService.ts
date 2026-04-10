@@ -44,18 +44,21 @@ let settingsData: UserSettings = {
 
 export const settingsService = {
   async getSettings(): Promise<UserSettings> {
-    return api.get<UserSettings>('/settings');
+    const response = await api.get<UserSettings>('/settings');
+    return response.data;
   },
 
   async updateSettings(settings: Partial<UserSettings>): Promise<UserSettings> {
-    return api.put<UserSettings>('/settings', settings);
+    const response = await api.put<UserSettings>('/settings', settings);
+    return response.data;
   },
 
   async updateProfile(data: ProfileData): Promise<ProfileData> {
-    return api.put<ProfileData>('/profile', data);
+    const response = await api.put<ProfileData>('/profile', data);
+    return response.data;
   },
 
   async changePassword(oldPassword: string, newPassword: string): Promise<void> {
-    return api.post<void>('/auth/change-password', { oldPassword, newPassword });
+    await api.post<void>('/auth/change-password', { oldPassword, newPassword });
   },
 };

@@ -41,30 +41,36 @@ export interface UpdateProgressReportData extends Partial<CreateProgressReportDa
 
 export const progressReportService = {
   async getAll(): Promise<ProgressReport[]> {
-    return api.get<ProgressReport[]>('/progress-reports');
+    const response = await api.get<ProgressReport[]>('/progress-reports');
+    return response.data;
   },
 
   async getById(id: string): Promise<ProgressReport> {
-    return api.get<ProgressReport>(`/progress-reports/${id}`);
+    const response = await api.get<ProgressReport>(`/progress-reports/${id}`);
+    return response.data;
   },
 
   async getByStudentId(studentId: string): Promise<ProgressReport[]> {
-    return api.get<ProgressReport[]>(`/progress-reports/student/${studentId}`);
+    const response = await api.get<ProgressReport[]>(`/progress-reports/student/${studentId}`);
+    return response.data;
   },
 
   async create(data: CreateProgressReportData): Promise<ProgressReport> {
-    return api.post<ProgressReport>('/progress-reports', data);
+    const response = await api.post<ProgressReport>('/progress-reports', data);
+    return response.data;
   },
 
   async update(id: string, data: UpdateProgressReportData): Promise<ProgressReport> {
-    return api.put<ProgressReport>(`/progress-reports/${id}`, data);
+    const response = await api.put<ProgressReport>(`/progress-reports/${id}`, data);
+    return response.data;
   },
 
   async delete(id: string): Promise<void> {
-    return api.delete<void>(`/progress-reports/${id}`);
+    await api.delete<void>(`/progress-reports/${id}`);
   },
 
   async generatePDF(id: string): Promise<Blob> {
+    const token = localStorage.getItem('token');
     const response = await fetch(`${import.meta.env.VITE_API_URL}/progress-reports/${id}/pdf`, {
       headers: {
         'Authorization': `Bearer ${token}`,

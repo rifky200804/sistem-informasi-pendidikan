@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -61,6 +62,24 @@ export function AnecdoteForm({ open, onOpenChange, onSubmit, anecdote }: Anecdot
       category: "umum",
     },
   });
+
+  useEffect(() => {
+    if (open) {
+      form.reset(anecdote ? {
+        title: anecdote.title,
+        content: anecdote.content,
+        studentId: anecdote.studentId,
+        date: anecdote.date,
+        category: anecdote.category,
+      } : {
+        title: "",
+        content: "",
+        studentId: "",
+        date: new Date().toISOString().split('T')[0],
+        category: "umum",
+      });
+    }
+  }, [open, anecdote, form]);
 
   const handleSubmit = async (data: CreateAnecdoteData) => {
     await onSubmit(data);

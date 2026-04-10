@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -73,6 +74,32 @@ export function APEForm({ open, onOpenChange, onSubmit, ape }: APEFormProps) {
       notes: "",
     },
   });
+
+  useEffect(() => {
+    if (open) {
+      form.reset(ape ? {
+        name: ape.name,
+        code: ape.code,
+        category: ape.category,
+        quantity: ape.quantity,
+        condition: ape.condition,
+        location: ape.location,
+        purchaseDate: ape.purchaseDate,
+        price: ape.price,
+        notes: ape.notes,
+      } : {
+        name: "",
+        code: "",
+        category: "edukatif",
+        quantity: 1,
+        condition: "baik",
+        location: "",
+        purchaseDate: new Date().toISOString().split('T')[0],
+        price: 0,
+        notes: "",
+      });
+    }
+  }, [open, ape, form]);
 
   const handleSubmit = async (data: CreateAPEData) => {
     await onSubmit(data);

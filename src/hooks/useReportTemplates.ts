@@ -53,7 +53,7 @@ export const useReportTemplates = () => {
     try {
       setError(null);
       const updatedTemplate = await reportTemplateService.update(id, data);
-      setTemplates(templates.map(t => t.id === id ? updatedTemplate : t));
+      await fetchTemplates(); // Panggil ulang API GET setelah update
       toast({
         title: "Berhasil",
         description: "Template berhasil diupdate",

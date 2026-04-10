@@ -19,10 +19,12 @@ export const analyticsService = {
     if (endDate) params.append('endDate', endDate);
     
     const endpoint = `/analytics${params.toString() ? `?${params.toString()}` : ''}`;
-    return api.get<AnalyticsData>(endpoint);
+    const response = await api.get<AnalyticsData>(endpoint);
+    return response.data;
   },
 
   async exportAnalytics(format: 'csv' | 'pdf'): Promise<Blob> {
+    const token = localStorage.getItem('token');
     const response = await fetch(`${import.meta.env.VITE_API_URL}/analytics/export?format=${format}`, {
       headers: {
         'Authorization': `Bearer ${token}`,

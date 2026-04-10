@@ -28,7 +28,7 @@ export interface CreateAPEData {
   notes: string;
 }
 
-export interface UpdateAPEData extends Partial<CreateAPEData> {}
+export type UpdateAPEData = Partial<CreateAPEData>;
 
 export const apeService = {
   async getAll(): Promise<APE[]> {
