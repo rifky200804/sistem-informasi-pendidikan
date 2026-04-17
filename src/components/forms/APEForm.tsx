@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -27,19 +27,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { CreateAPEData, APE } from "@/services/apeService";
+import { Upload, X, ImageIcon } from "lucide-react";
+import { getFileUrl } from "@/lib/fileUrl";
 
 const apeSchema = z.object({
   name: z.string().min(1, "Nama APE wajib diisi"),
-  code: z.string().min(1, "Kode APE wajib diisi"),
-  category: z.enum(["indoor", "outdoor", "edukatif", "kreativitas"]),
+  condition: z.string().min(1, "Kondisi wajib diisi"),
   quantity: z.number().min(1, "Jumlah minimal 1"),
-  condition: z.enum(["baik", "rusak", "hilang"]),
   location: z.string().min(1, "Lokasi wajib diisi"),
-  purchaseDate: z.string().min(1, "Tanggal pembelian wajib diisi"),
-  price: z.number().min(0, "Harga tidak boleh negatif"),
-  notes: z.string(),
+  photo: z.any().optional(),
 });
 
 interface APEFormProps {
@@ -50,60 +47,65 @@ interface APEFormProps {
 }
 
 export function APEForm({ open, onOpenChange, onSubmit, ape }: APEFormProps) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const form = useForm<CreateAPEData>({
     resolver: zodResolver(apeSchema),
     defaultValues: ape ? {
-      name: ape.name,
-      code: ape.code,
-      category: ape.category,
-      quantity: ape.quantity,
-      condition: ape.condition,
-      location: ape.location,
-      purchaseDate: ape.purchaseDate,
-      price: ape.price,
-      notes: ape.notes,
+      name: ape.name || "",
+      condition: ape.condition || "Baik",
+      quantity: ape.quantity || 1,
+      location: ape.location || "",
     } : {
       name: "",
-      code: "",
-      category: "edukatif",
+      condition: "Baik",
       quantity: 1,
-      condition: "baik",
       location: "",
-      purchaseDate: new Date().toISOString().split('T')[0],
-      price: 0,
-      notes: "",
     },
   });
 
   useEffect(() => {
     if (open) {
       form.reset(ape ? {
-        name: ape.name,
-        code: ape.code,
-        category: ape.category,
-        quantity: ape.quantity,
-        condition: ape.condition,
-        location: ape.location,
-        purchaseDate: ape.purchaseDate,
-        price: ape.price,
-        notes: ape.notes,
+        name: ape.name || "",
+        condition: ape.condition || "Baik",
+        quantity: ape.quantity || 1,
+        location: ape.location || "",
       } : {
         name: "",
-        code: "",
-        category: "edukatif",
+        condition: "Baik",
         quantity: 1,
-        condition: "baik",
         location: "",
-        purchaseDate: new Date().toISOString().split('T')[0],
-        price: 0,
-        notes: "",
       });
+      
+      if (ape?.imageUrl || ape?.photo) {
+        setPreviewUrl(getFileUrl((ape.imageUrl || ape.photo) as string));
+      } else {
+        setPreviewUrl(null);
+      }
     }
   }, [open, ape, form]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      form.setValue("photo", file);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    }
+  };
+
+  const removePhoto = () => {
+    form.setValue("photo", null);
+    setPreviewUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const handleSubmit = async (data: CreateAPEData) => {
     await onSubmit(data);
     form.reset();
+    setPreviewUrl(null);
     onOpenChange(false);
   };
 
@@ -118,6 +120,50 @@ export function APEForm({ open, onOpenChange, onSubmit, ape }: APEFormProps) {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            {/* Photo Upload Section */}
+            <div className="space-y-2">
+              <FormLabel>Foto APE (Opsional)</FormLabel>
+              <div 
+                className="relative border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center gap-2 bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer min-h-[150px]"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {previewUrl ? (
+                  <div className="relative w-full aspect-video rounded-md overflow-hidden border bg-background">
+                    <img src={previewUrl} alt="Preview" className="w-full h-full object-contain" />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2 h-8 w-8"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removePhoto();
+                      }}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="p-3 rounded-full bg-background border shadow-sm">
+                      <Upload className="w-6 h-6 text-muted-foreground" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium">Klik untuk upload foto</p>
+                      <p className="text-xs text-muted-foreground mt-1">PNG, JPG up to 10MB</p>
+                    </div>
+                  </>
+                )}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                />
+              </div>
+            </div>
+
             <FormField
               control={form.control}
               name="name"
@@ -125,60 +171,7 @@ export function APEForm({ open, onOpenChange, onSubmit, ape }: APEFormProps) {
                 <FormItem>
                   <FormLabel>Nama APE</FormLabel>
                   <FormControl>
-                    <Input placeholder="Contoh: Puzzle Kayu" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="code"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Kode APE</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Contoh: APE-001" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Kategori</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Pilih kategori" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="indoor">Indoor</SelectItem>
-                      <SelectItem value="outdoor">Outdoor</SelectItem>
-                      <SelectItem value="edukatif">Edukatif</SelectItem>
-                      <SelectItem value="kreativitas">Kreativitas</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="quantity"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Jumlah</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      {...field} 
-                      onChange={(e) => field.onChange(parseInt(e.target.value))}
-                    />
+                    <Input placeholder="Contoh: Puzzle Huruf" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -190,80 +183,59 @@ export function APEForm({ open, onOpenChange, onSubmit, ape }: APEFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Kondisi</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Pilih kondisi" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="baik">Baik</SelectItem>
-                      <SelectItem value="rusak">Rusak</SelectItem>
-                      <SelectItem value="hilang">Hilang</SelectItem>
+                      <SelectItem value="Baik">Baik</SelectItem>
+                      <SelectItem value="Cukup">Cukup</SelectItem>
+                      <SelectItem value="Rusak">Rusak</SelectItem>
+                      <SelectItem value="Hilang">Hilang</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="location"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Lokasi</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Contoh: Kelas A" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="purchaseDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tanggal Pembelian</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="price"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Harga (Rp)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      {...field} 
-                      onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Catatan</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Catatan tambahan..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
-              <Button type="submit">{ape ? "Simpan Perubahan" : "Tambah APE"}</Button>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="quantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Jumlah</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        {...field} 
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Lokasi</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Contoh: Ruang A" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <DialogFooter className="pt-4">
+              <Button type="submit" className="w-full sm:w-auto">
+                {ape ? "Simpan Perubahan" : "Tambah APE"}
+              </Button>
             </DialogFooter>
           </form>
         </Form>

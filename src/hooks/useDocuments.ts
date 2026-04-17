@@ -1,50 +1,43 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { documentService, Document, CreateDocumentData, UpdateDocumentData } from '@/services/documentService';
+import { Pagination } from '@/types/api';
 import { useToast } from '@/hooks/use-toast';
 
 export const useDocuments = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await documentService.getAll();
-      setDocuments(data);
+      const result = await documentService.getAll(page, pageSize);
+      setDocuments(result.data);
+      setPagination(result.pagination);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Gagal mengambil data dokumen';
       setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: errorMessage, variant: "destructive" });
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, pageSize]);
 
   const uploadDocument = async (data: CreateDocumentData) => {
     try {
       setError(null);
-      const newDocument = await documentService.create(data);
-      setDocuments([...documents, newDocument]);
-      toast({
-        title: "Berhasil",
-        description: "Dokumen berhasil diupload",
-      });
-      return newDocument;
+      await documentService.create(data);
+      toast({ title: "Berhasil", description: "Dokumen berhasil diupload" });
+      fetchDocuments();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Gagal upload dokumen';
       setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: errorMessage, variant: "destructive" });
       throw err;
     }
   };
@@ -52,21 +45,13 @@ export const useDocuments = () => {
   const updateDocument = async (id: string, data: UpdateDocumentData) => {
     try {
       setError(null);
-      const updatedDocument = await documentService.update(id, data);
-      setDocuments(documents.map(d => d.id === id ? updatedDocument : d));
-      toast({
-        title: "Berhasil",
-        description: "Data dokumen berhasil diupdate",
-      });
-      return updatedDocument;
+      await documentService.update(id, data);
+      toast({ title: "Berhasil", description: "Data dokumen berhasil diupdate" });
+      fetchDocuments();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Gagal mengupdate dokumen';
       setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: errorMessage, variant: "destructive" });
       throw err;
     }
   };
@@ -75,19 +60,12 @@ export const useDocuments = () => {
     try {
       setError(null);
       await documentService.delete(id);
-      setDocuments(documents.filter(d => d.id !== id));
-      toast({
-        title: "Berhasil",
-        description: "Dokumen berhasil dihapus",
-      });
+      toast({ title: "Berhasil", description: "Dokumen berhasil dihapus" });
+      fetchDocuments();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Gagal menghapus dokumen';
       setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: errorMessage, variant: "destructive" });
       throw err;
     }
   };
@@ -104,28 +82,26 @@ export const useDocuments = () => {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      toast({
-        title: "Berhasil",
-        description: "Dokumen berhasil didownload",
-      });
+      toast({ title: "Berhasil", description: "Dokumen berhasil didownload" });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Gagal download dokumen';
       setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: errorMessage, variant: "destructive" });
       throw err;
     }
   };
 
   useEffect(() => {
     fetchDocuments();
-  }, []);
+  }, [fetchDocuments]);
 
   return {
     documents,
+    pagination,
+    page,
+    pageSize,
+    setPage,
+    setPageSize,
     loading,
     error,
     fetchDocuments,

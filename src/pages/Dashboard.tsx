@@ -2,40 +2,43 @@ import {
   GraduationCap, 
   Users, 
   BookOpen, 
-  Calendar
+  FileText,
+  Calendar,
+  ClipboardList,
+  Loader2
 } from 'lucide-react';
 import { StatCard } from '@/components/base/StatCard';
 import { DataTable, Column } from '@/components/base/DataTable';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useDashboard } from '@/hooks/useDashboard';
+import { LatestAnecdote } from '@/services/dashboardService';
 
-interface RecentActivity {
-  id: string;
-  type: string;
-  description: string;
-  user: string;
-  date: string;
-  status: string;
-}
-
-const mockActivities: RecentActivity[] = [
-  { id: 'ACT-001', type: 'Anekdot', description: 'Catatan anekdot untuk Aisyah Putri', user: 'Siti Aminah', date: '2024-01-20', status: 'completed' },
-  { id: 'ACT-002', type: 'Rapor', description: 'Rapor Semester 1 Muhammad Rizki', user: 'Budi Santoso', date: '2024-01-20', status: 'draft' },
-  { id: 'ACT-003', type: 'Dokumen', description: 'Upload Kurikulum PAUD 2024', user: 'Dewi Lestari', date: '2024-01-19', status: 'completed' },
-  { id: 'ACT-004', type: 'Murid', description: 'Data murid baru: Raffi Ahmad', user: 'Ahmad Fauzi', date: '2024-01-19', status: 'completed' },
-  { id: 'ACT-005', type: 'APE', description: 'Pembaruan kondisi APE Kelas A', user: 'Rina Kartika', date: '2024-01-18', status: 'completed' },
-];
-
-const columns: Column<RecentActivity>[] = [
+const anecdoteColumns: Column<LatestAnecdote>[] = [
   { 
-    key: 'type', 
-    header: 'Tipe',
-    render: (item) => (
-      <Badge variant="outline">{item.type}</Badge>
-    ),
+    key: 'content', 
+    header: 'Judul',
+    render: (item) => <span className="font-medium">{item.content || "-"}</span>,
   },
-  { key: 'description', header: 'Aktivitas' },
-  { key: 'user', header: 'Pengguna' },
+  { 
+    key: 'description', 
+    header: 'Deskripsi',
+    render: (item) => item.description 
+      ? <span className="text-sm text-muted-foreground line-clamp-2">{item.description}</span> 
+      : <span className="text-muted-foreground">-</span>,
+  },
+  { 
+    key: 'category', 
+    header: 'Kategori',
+    render: (item) => item.category 
+      ? <Badge variant="outline">{item.category}</Badge> 
+      : <span className="text-muted-foreground">-</span>,
+  },
+  {
+    key: 'teacher',
+    header: 'Guru',
+    render: (item) => item.teacher?.name || <span className="text-muted-foreground">-</span>,
+  },
   {
     key: 'date',
     header: 'Tanggal',
@@ -46,18 +49,11 @@ const columns: Column<RecentActivity>[] = [
       </div>
     ),
   },
-  {
-    key: 'status',
-    header: 'Status',
-    render: (item) => (
-      <Badge variant={item.status === 'completed' ? 'default' : 'secondary'}>
-        {item.status === 'completed' ? 'Selesai' : 'Draft'}
-      </Badge>
-    ),
-  },
 ];
 
 export default function Dashboard() {
+  const { stats, loading } = useDashboard();
+
   return (
     <div className="space-y-6">
       <div>
@@ -70,19 +66,19 @@ export default function Dashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <StatCard
           title="Total Murid"
-          value="156"
+          value={loading ? "..." : (stats?.studentsCount ?? 0)}
           icon={GraduationCap}
           variant="primary"
         />
         <StatCard
           title="Total Guru"
-          value="24"
+          value={loading ? "..." : (stats?.guruCount ?? 0)}
           icon={Users}
           variant="success"
         />
         <StatCard
-          title="Anekdot Bulan Ini"
-          value="142"
+          title="Total Anekdot"
+          value={loading ? "..." : (stats?.anecdotesCountTotal ?? 0)}
           icon={BookOpen}
           variant="warning"
         />
@@ -90,9 +86,19 @@ export default function Dashboard() {
 
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-foreground">Aktivitas Terbaru</h2>
+          <h2 className="text-xl font-semibold text-foreground">Anekdot Terbaru</h2>
+          <p className="text-sm text-muted-foreground">
+            {stats?.latestAnecdotes?.length ?? 0} catatan terbaru
+          </p>
         </div>
-        <DataTable data={mockActivities} columns={columns} />
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-muted-foreground">Memuat data...</span>
+          </div>
+        ) : (
+          <DataTable data={stats?.latestAnecdotes ?? []} columns={anecdoteColumns} />
+        )}
       </Card>
     </div>
   );

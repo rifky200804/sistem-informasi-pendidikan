@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2, Eye } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SectionForm } from "@/components/forms/SectionForm";
 import { DeleteConfirmDialog } from "@/components/dialogs/DeleteConfirmDialog";
 import { ReportPDFPreview } from "@/components/preview/ReportPDFPreview";
@@ -22,11 +23,20 @@ const ReportTemplates = () => {
 
   useEffect(() => {
     if (activeTemplate) {
-      setLocalSections(activeTemplate.data || []);
+      const initialSections = (activeTemplate.data || []).map((sec, index) => ({
+        ...sec,
+        id: sec.id || `section-${index}-${Date.now()}`
+      }));
+      setLocalSections(initialSections);
     }
   }, [activeTemplate]);
 
-  const hasChanges = JSON.stringify(localSections) !== JSON.stringify(activeTemplate?.data || []);
+  const hasChanges = (() => {
+    if (!activeTemplate) return false;
+    const cleanLocal = localSections.map(({ id, ...rest }) => rest);
+    const cleanActive = (activeTemplate.data || []).map(({ id, ...rest }) => rest);
+    return JSON.stringify(cleanLocal) !== JSON.stringify(cleanActive);
+  })();
 
   // Section Editor States
   const [sectionFormOpen, setSectionFormOpen] = useState(false);
@@ -41,10 +51,55 @@ const ReportTemplates = () => {
     } catch (e) {}
   };
 
+  const getFormattedSections = (sections: Section[]) => {
+    return sections.map((sec) => {
+      let formattedQuestions = (sec.Questions || []).map(q => ({
+        Question: q.Question,
+        answers: q.answers || [],
+        Ket: q.Ket || ""
+      }));
+
+      if (sec.type === 'text' && formattedQuestions.length === 0) {
+        formattedQuestions = [{
+          Question: 'Catatan',
+          answers: [],
+          Ket: ''
+        }];
+      }
+
+      let sectionVal: string | number = sec.Section;
+      if (!isNaN(Number(sec.Section)) && sec.Section.trim() !== '') {
+        sectionVal = Number(sec.Section);
+      }
+
+      let finalHeaders = sec.Headers || sec.headers || [];
+      if (finalHeaders.length === 0 && (sec.type === 'table_text' || sec.type === 'table')) {
+        finalHeaders = ['Pernyataan', 'Nilai', 'Predikat', 'Keterangan'];
+      }
+
+      const baseSection: any = {
+        Section: sectionVal,
+        type: sec.type,
+        headers: finalHeaders,
+        Questions: formattedQuestions
+      };
+
+      if (sec.type === 'text') {
+        baseSection.Answer = "";
+        baseSection.Photo = "";
+      }
+
+      return baseSection;
+    });
+  };
+
   const handleUpdateTemplateInfo = async (data: any) => {
     try {
       if (activeTemplate) {
-        await updateTemplate(activeTemplate.id || "", data);
+        await updateTemplate(activeTemplate.id || "", {
+          ...data,
+          data: getFormattedSections(localSections)
+        });
       }
       setTemplateFormOpen(false);
       setEditingTemplateData(null);
@@ -95,36 +150,10 @@ const ReportTemplates = () => {
     try {
       setIsSavingSections(true);
 
-      const formattedSections = localSections.map((sec) => {
-        const formattedQuestions = (sec.Questions || []).map(q => ({
-          Question: q.Question,
-          answers: q.answers || [],
-          Ket: q.Ket || ""
-        }));
-
-        let sectionVal: string | number = sec.Section;
-        if (!isNaN(Number(sec.Section)) && sec.Section.trim() !== '') {
-          sectionVal = Number(sec.Section);
-        }
-
-        const baseSection: any = {
-          Section: sectionVal,
-          type: sec.type,
-          Questions: formattedQuestions
-        };
-
-        if (sec.type === 'text') {
-          baseSection.Answer = "";
-          baseSection.Photo = "";
-        }
-
-        return baseSection;
-      });
-
       const payload = {
         title: activeTemplate.title,
         year: activeTemplate.year,
-        data: formattedSections
+        data: getFormattedSections(localSections)
       };
 
       await updateTemplate(activeTemplate.id || "", payload);
@@ -139,10 +168,33 @@ const ReportTemplates = () => {
       case 'table_text':
         return 'Tabel Nilai (Text)';
       case 'table':
-        return 'Tabel Predikat (Multiple Choice)';
+        return 'Tabel Predikat (Select Option)';
       case 'text':
         return 'Teks & Gambar';
     }
+  };
+
+  const renderTableHeaders = (section: Section, defaultHeaders: string[]) => {
+    let cols = section.Headers?.length ? section.Headers : section.headers?.length ? section.headers : defaultHeaders;
+    if (cols.length > 0 && cols[0].toLowerCase() !== 'no') {
+      cols = ['No', ...cols];
+    } else if (cols.length === 0) {
+      cols = ['No', ...defaultHeaders];
+    }
+
+    return cols.map((header, idx) => (
+      <th key={idx} className={`border p-2 bg-muted text-xs ${header.toLowerCase() === 'no' ? 'w-12 text-center' : 'text-left'}`}>
+        {header}
+      </th>
+    ));
+  };
+  
+  const getColumnCount = (section: Section, defaultHeaders: string[]) => {
+    let cols = section.Headers?.length ? section.Headers : section.headers?.length ? section.headers : defaultHeaders;
+    if (cols.length > 0 && cols[0].toLowerCase() !== 'no') {
+      return cols.length + 1;
+    }
+    return cols.length || defaultHeaders.length + 1;
   };
 
   if (loading && templates.length === 0) {
@@ -237,19 +289,22 @@ const ReportTemplates = () => {
                       <table className="w-full text-sm border-collapse bg-background">
                         <thead>
                           <tr>
-                            <th className="border p-2 text-left bg-muted">Pertanyaan</th>
-                            <th className="border p-2 text-left bg-muted">Nilai</th>
-                            <th className="border p-2 text-left bg-muted">Keterangan</th>
+                            {renderTableHeaders(section, ['Pernyataan', 'Nilai', 'Predikat', 'Keterangan'])}
                           </tr>
                         </thead>
                         <tbody>
-                          {section.Questions?.map((q: Question, i: number) => (
-                            <tr key={i}>
-                              <td className="border p-2">{q.Question}</td>
-                              <td className="border p-2"></td>
-                              <td className="border p-2"></td>
-                            </tr>
-                          ))}
+                          {section.Questions?.map((q: Question, i: number) => {
+                            const colCount = getColumnCount(section, ['Pernyataan', 'Nilai', 'Predikat', 'Keterangan']);
+                            return (
+                              <tr key={i}>
+                                <td className="border p-2 text-center">{i + 1}</td>
+                                <td className="border p-2">{q.Question}</td>
+                                {Array.from({ length: Math.max(0, colCount - 2) }).map((_, colIdx) => (
+                                  <td key={colIdx} className="border p-2"></td>
+                                ))}
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     )}
@@ -258,36 +313,66 @@ const ReportTemplates = () => {
                       <table className="w-full text-sm border-collapse bg-background">
                         <thead>
                           <tr>
-                            <th className="border p-2 text-left bg-muted">Aspek</th>
-                            {(section.Questions?.[0]?.answers || ['Belum Berkembang', 'Mulai Berkembang', 'Berkembang Sesuai Harapan', 'Berkembang Sangat Baik']).map((opt: string) => (
-                              <th key={opt} className="border p-2 text-center bg-muted text-xs">{opt}</th>
-                            ))}
-                            <th className="border p-2 text-left bg-muted">Keterangan</th>
+                            {renderTableHeaders(section, ['Pernyataan', 'Nilai', 'Predikat', 'Keterangan'])}
                           </tr>
                         </thead>
                         <tbody>
-                          {section.Questions?.map((q: Question, i: number) => (
-                            <tr key={i}>
-                              <td className="border p-2">{q.Question}</td>
-                              {(q.answers || []).map((opt: string) => (
-                                <td key={opt} className="border p-2 text-center">
-                                  <div className="w-4 h-4 border rounded-full mx-auto" />
-                                </td>
-                              ))}
-                              <td className="border p-2"></td>
-                            </tr>
-                          ))}
+                          {section.Questions?.map((q: Question, i: number) => {
+                            const defaultHeaders = ['Pernyataan', 'Nilai', 'Predikat', 'Keterangan'];
+                            let cols = section.Headers?.length ? section.Headers : section.headers?.length ? section.headers : defaultHeaders;
+                            if (cols.length > 0 && cols[0].toLowerCase() !== 'no') {
+                              cols = ['No', ...cols];
+                            } else if (cols.length === 0) {
+                              cols = ['No', ...defaultHeaders];
+                            }
+                            
+                            const options = q.answers || section.Questions?.[0]?.answers || ['Belum Berkembang', 'Mulai Berkembang', 'Berkembang Sesuai Harapan', 'Berkembang Sangat Baik'];
+
+                            return (
+                              <tr key={i}>
+                                {cols.map((col, cIdx) => {
+                                  if (col.toLowerCase() === 'no') {
+                                    return <td key={cIdx} className="border p-2 text-center">{i + 1}</td>;
+                                  }
+                                  if (cIdx === 1) {
+                                    return <td key={cIdx} className="border p-2">{q.Question}</td>;
+                                  }
+                                  if (col.toLowerCase() === 'predikat' || (cIdx === cols.length - 2 && !cols.some(c => c.toLowerCase() === 'predikat'))) {
+                                    return (
+                                      <td key={cIdx} className="border p-2 min-w-[120px]">
+                                        <Select disabled>
+                                          <SelectTrigger className="w-full h-8 text-xs">
+                                            <SelectValue placeholder="Pilih..." />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {options.map((opt: string) => (
+                                              <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </td>
+                                    );
+                                  }
+                                  return <td key={cIdx} className="border p-2"></td>;
+                                })}
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     )}
 
                     {section.type === 'text' && (
-                      <div className="border p-4 space-y-4 bg-background">
-                        {section.Questions?.map((q: Question, i: number) => (
-                          <div key={i} className="text-sm text-muted-foreground italic">
-                            {q.Question}: (Area untuk catatan)
-                          </div>
-                        ))}
+                      <div className="border border-dashed p-6 space-y-4 bg-muted/20 rounded-md flex flex-col items-center justify-center text-center">
+                         <div className="w-full text-sm text-muted-foreground italic mb-2">
+                            (Area penulisan catatan naratif)
+                         </div>
+                         <div className="flex gap-2 opacity-50">
+                            <div className="w-16 h-16 border rounded bg-background flex items-center justify-center text-[10px]">Foto 1</div>
+                            <div className="w-16 h-16 border rounded bg-background flex items-center justify-center text-[10px]">Foto 2</div>
+                            <div className="w-16 h-16 border rounded bg-background flex items-center justify-center text-[10px]">Foto 3</div>
+                            <div className="w-16 h-16 border rounded bg-background flex items-center justify-center text-[10px]">Foto 4</div>
+                         </div>
                       </div>
                     )}
                   </div>

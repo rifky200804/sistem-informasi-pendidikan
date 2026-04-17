@@ -18,3 +18,13 @@ export interface ApiResponse<T> {
   success: boolean;
   data: T;
 }
+
+export interface PaginatedResult<T> {
+  data: T[];
+  pagination: Pagination;
+}
+
+export interface SelectOption {
+  label: string;
+  value: number;
+}

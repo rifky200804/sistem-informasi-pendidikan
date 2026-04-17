@@ -32,14 +32,13 @@ import { CreateStudentData, Student } from "@/services/studentService";
 
 const studentSchema = z.object({
   name: z.string().min(1, "Nama wajib diisi"),
+  identifier: z.string().min(1, "Identifier wajib diisi"),
   nisn: z.string().min(1, "NISN wajib diisi"),
-  birthDate: z.string().min(1, "Tanggal lahir wajib diisi"),
-  gender: z.enum(["L", "P"]),
+  className: z.string().min(1, "Kelas wajib diisi"),
+  tahunAjaran: z.string().min(1, "Tahun Ajaran wajib diisi"),
   parentName: z.string().min(1, "Nama orang tua wajib diisi"),
   parentPhone: z.string().min(1, "Nomor telepon orang tua wajib diisi"),
   address: z.string().min(1, "Alamat wajib diisi"),
-  class: z.string().min(1, "Kelas wajib diisi"),
-  status: z.enum(["active", "inactive", "graduated"]),
 });
 
 interface StudentFormProps {
@@ -54,14 +53,13 @@ export function StudentForm({ open, onOpenChange, onSubmit, student }: StudentFo
     resolver: zodResolver(studentSchema),
     defaultValues: student || {
       name: "",
+      identifier: "",
       nisn: "",
-      birthDate: "",
-      gender: "L",
+      className: "",
+      tahunAjaran: "",
       parentName: "",
       parentPhone: "",
       address: "",
-      class: "",
-      status: "active",
     },
   });
 
@@ -69,14 +67,13 @@ export function StudentForm({ open, onOpenChange, onSubmit, student }: StudentFo
     if (open) {
       form.reset(student || {
         name: "",
+        identifier: "",
         nisn: "",
-        birthDate: "",
-        gender: "L",
+        className: "",
+        tahunAjaran: "",
         parentName: "",
         parentPhone: "",
         address: "",
-        class: "",
-        status: "active",
       });
     }
   }, [open, student, form]);
@@ -113,6 +110,19 @@ export function StudentForm({ open, onOpenChange, onSubmit, student }: StudentFo
             />
             <FormField
               control={form.control}
+              name="identifier"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Identifier / NIK</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Masukkan Identifier" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="nisn"
               render={({ field }) => (
                 <FormItem>
@@ -126,12 +136,12 @@ export function StudentForm({ open, onOpenChange, onSubmit, student }: StudentFo
             />
             <FormField
               control={form.control}
-              name="birthDate"
+              name="className"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tanggal Lahir</FormLabel>
+                  <FormLabel>Kelas</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Input placeholder="Contoh: A" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -139,33 +149,12 @@ export function StudentForm({ open, onOpenChange, onSubmit, student }: StudentFo
             />
             <FormField
               control={form.control}
-              name="gender"
+              name="tahunAjaran"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Jenis Kelamin</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Pilih jenis kelamin" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="L">Laki-laki</SelectItem>
-                      <SelectItem value="P">Perempuan</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="class"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Kelas</FormLabel>
+                  <FormLabel>Tahun Ajaran</FormLabel>
                   <FormControl>
-                    <Input placeholder="Contoh: TK A" {...field} />
+                    <Input placeholder="Contoh: 2024/2025" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -206,28 +195,6 @@ export function StudentForm({ open, onOpenChange, onSubmit, student }: StudentFo
                   <FormControl>
                     <Textarea placeholder="Masukkan alamat lengkap" {...field} />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Pilih status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="active">Aktif</SelectItem>
-                      <SelectItem value="inactive">Tidak Aktif</SelectItem>
-                      <SelectItem value="graduated">Lulus</SelectItem>
-                    </SelectContent>
-                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

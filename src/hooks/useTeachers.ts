@@ -1,103 +1,86 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { teacherService, Teacher, CreateTeacherData, UpdateTeacherData } from '@/services/teacherService';
+import { Pagination } from '@/types/api';
 import { useToast } from '@/hooks/use-toast';
 
 export const useTeachers = () => {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const fetchTeachers = async () => {
+  const fetchTeachers = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await teacherService.getAll();
-      setTeachers(data);
+      const result = await teacherService.getAll(page, pageSize);
+      setTeachers(result.data);
+      setPagination(result.pagination);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Gagal mengambil data guru';
       setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: errorMessage, variant: "destructive" });
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, pageSize]);
 
   const createTeacher = async (data: CreateTeacherData) => {
     try {
       setError(null);
-      const newTeacher = await teacherService.create(data);
-      setTeachers([...teachers, newTeacher]);
-      toast({
-        title: "Berhasil",
-        description: "Data guru berhasil ditambahkan",
-      });
-      return newTeacher;
+      await teacherService.create(data);
+      toast({ title: "Berhasil", description: "Data guru berhasil ditambahkan" });
+      fetchTeachers();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Gagal menambahkan guru';
       setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: errorMessage, variant: "destructive" });
       throw err;
     }
   };
 
-  const updateTeacher = async (id: string, data: UpdateTeacherData) => {
+  const updateTeacher = async (id: number, data: UpdateTeacherData) => {
     try {
       setError(null);
-      const updatedTeacher = await teacherService.update(id, data);
-      setTeachers(teachers.map(t => t.id === id ? updatedTeacher : t));
-      toast({
-        title: "Berhasil",
-        description: "Data guru berhasil diupdate",
-      });
-      return updatedTeacher;
+      await teacherService.update(id, data);
+      toast({ title: "Berhasil", description: "Data guru berhasil diupdate" });
+      fetchTeachers();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Gagal mengupdate guru';
       setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: errorMessage, variant: "destructive" });
       throw err;
     }
   };
 
-  const deleteTeacher = async (id: string) => {
+  const deleteTeacher = async (id: number) => {
     try {
       setError(null);
       await teacherService.delete(id);
-      setTeachers(teachers.filter(t => t.id !== id));
-      toast({
-        title: "Berhasil",
-        description: "Data guru berhasil dihapus",
-      });
+      toast({ title: "Berhasil", description: "Data guru berhasil dihapus" });
+      fetchTeachers();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Gagal menghapus guru';
       setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: errorMessage, variant: "destructive" });
       throw err;
     }
   };
 
   useEffect(() => {
     fetchTeachers();
-  }, []);
+  }, [fetchTeachers]);
 
   return {
     teachers,
+    pagination,
+    page,
+    pageSize,
+    setPage,
+    setPageSize,
     loading,
     error,
     fetchTeachers,

@@ -14,6 +14,8 @@ import Anecdotes from "./pages/Anecdotes";
 import ProgressReports from "./pages/ProgressReports";
 import APE from "./pages/APE";
 import ReportTemplates from "./pages/ReportTemplates";
+import Soal from "./pages/Soal";
+import ActivityLogs from "./pages/ActivityLogs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +36,8 @@ const App = () => (
           <Route path="/progress-reports" element={<MainLayout><ProgressReports /></MainLayout>} />
           <Route path="/ape" element={<MainLayout><APE /></MainLayout>} />
           <Route path="/report-templates" element={<MainLayout><ReportTemplates /></MainLayout>} />
+          <Route path="/soal" element={<MainLayout><Soal /></MainLayout>} />
+          <Route path="/activity-logs" element={<MainLayout><ActivityLogs /></MainLayout>} />
           <Route path="/settings" element={<MainLayout><Settings /></MainLayout>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

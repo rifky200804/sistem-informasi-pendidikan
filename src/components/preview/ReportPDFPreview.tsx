@@ -41,8 +41,21 @@ export const ReportPDFPreview = ({
       yPosition += 8;
 
       if (section.type === "table_text") {
-        const columns = ["Pertanyaan", "Nilai", "Keterangan"];
-        const rows = section.Questions?.map((q: Question) => [q.Question, "", ""]) || [["", "", ""], ["", "", ""]];
+        let cols = section.Headers?.length ? section.Headers : section.headers?.length ? section.headers : ["Pernyataan", "Nilai", "Predikat", "Keterangan"];
+        if (cols.length > 0 && cols[0].toLowerCase() !== "no") {
+          cols = ["No", ...cols];
+        } else if (cols.length === 0) {
+          cols = ["No", "Pernyataan", "Nilai", "Predikat", "Keterangan"];
+        }
+
+        const columns = cols;
+        const rows = section.Questions?.map((q: Question, i: number) => {
+          const rowData = [(i + 1).toString(), q.Question];
+          while (rowData.length < columns.length) {
+            rowData.push("");
+          }
+          return rowData;
+        }) || [["", "", "", ""]];
 
         autoTable(doc, {
           startY: yPosition,
@@ -57,8 +70,30 @@ export const ReportPDFPreview = ({
         yPosition = (doc as any).lastAutoTable.finalY + 10;
       } else if (section.type === "table") {
         const answerOptions = section.Questions?.[0]?.answers || ["Belum Berkembang", "Mulai Berkembang", "Berkembang Sesuai Harapan", "Berkembang Sangat Baik"];
-        const columns = ["Aspek", ...answerOptions, "Keterangan"];
-        const rows = section.Questions?.map((q: Question) => [q.Question, ...answerOptions.map(() => "○"), ""]) || [["", ...answerOptions.map(() => "○"), ""]];
+        
+        let cols = section.Headers?.length ? section.Headers : section.headers?.length ? section.headers : ["Pernyataan", "Nilai", "Predikat", "Keterangan"];
+        if (cols.length > 0 && cols[0].toLowerCase() !== "no") {
+          cols = ["No", ...cols];
+        } else if (cols.length === 0) {
+          cols = ["No", "Pernyataan", "Nilai", "Predikat", "Keterangan"];
+        }
+
+        const columns = cols;
+        const rows = section.Questions?.map((q: Question, i: number) => {
+          const rowData: string[] = [];
+          cols.forEach((col, cIdx) => {
+            if (col.toLowerCase() === "no") {
+              rowData.push((i + 1).toString());
+            } else if (cIdx === 1) {
+              rowData.push(q.Question);
+            } else if (col.toLowerCase() === "predikat" || (cIdx === cols.length - 2 && !cols.some(c => c.toLowerCase() === "predikat"))) {
+              rowData.push("(Pilih Predikat)");
+            } else {
+              rowData.push("");
+            }
+          });
+          return rowData;
+        }) || [["", "", "", ""]];
 
         autoTable(doc, {
           startY: yPosition,
@@ -67,7 +102,7 @@ export const ReportPDFPreview = ({
           theme: "grid",
           headStyles: { fillColor: [80, 80, 80], fontSize: 8, halign: "center" },
           styles: { fontSize: 8, cellPadding: 3, halign: "center" },
-          columnStyles: { 0: { halign: "left", cellWidth: 50 }, [columns.length - 1]: { halign: "left" } },
+          columnStyles: { 0: { halign: "center", cellWidth: 10 }, 1: { halign: "left", cellWidth: 50 }, [columns.length - 1]: { halign: "left" } },
           margin: { left: 14, right: 14 },
         });
 
@@ -101,51 +136,85 @@ export const ReportPDFPreview = ({
           <div key={section.id || idx} className="mb-6">
             <h2 className="font-bold text-sm mb-2">{section.Section}</h2>
 
-            {section.type === "table_text" && (
-              <table className="w-full border-collapse text-xs">
-                <thead>
-                  <tr>
-                    <th className="border border-gray-400 p-2 bg-gray-100 text-left">Pertanyaan</th>
-                    <th className="border border-gray-400 p-2 bg-gray-100 text-left">Nilai</th>
-                    <th className="border border-gray-400 p-2 bg-gray-100 text-left">Keterangan</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(section.Questions || []).map((q: Question, i: number) => (
-                    <tr key={i}>
-                      <td className="border border-gray-400 p-2">{q.Question}</td>
-                      <td className="border border-gray-400 p-2"></td>
-                      <td className="border border-gray-400 p-2"></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+            {section.type === "table_text" && (() => {
+              let cols = section.Headers?.length ? section.Headers : section.headers?.length ? section.headers : ["Pernyataan", "Nilai", "Predikat", "Keterangan"];
+              if (cols.length > 0 && cols[0].toLowerCase() !== "no") {
+                cols = ["No", ...cols];
+              } else if (cols.length === 0) {
+                cols = ["No", "Pernyataan", "Nilai", "Predikat", "Keterangan"];
+              }
 
-            {section.type === "table" && (
-              <table className="w-full border-collapse text-xs">
-                <thead>
-                  <tr>
-                    <th className="border border-gray-400 p-2 bg-gray-100 text-left">Aspek</th>
-                    {(section.Questions?.[0]?.answers || ["Belum Berkembang", "Mulai Berkembang", "Berkembang Sesuai Harapan", "Berkembang Sangat Baik"]).map((opt: string) => (
-                      <th key={opt} className="border border-gray-400 p-1 bg-gray-100 text-center text-[10px]">{opt}</th>
-                    ))}
-                    <th className="border border-gray-400 p-2 bg-gray-100 text-left">Keterangan</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(section.Questions || []).map((q: Question, i: number) => (
-                    <tr key={i}>
-                      <td className="border border-gray-400 p-2">{q.Question}</td>
-                      {(q.answers || []).map((opt: string) => (
-                        <td key={opt} className="border border-gray-400 p-1 text-center">○</td>
+              return (
+                <table className="w-full border-collapse text-xs">
+                  <thead>
+                    <tr>
+                      {cols.map((col, cIdx) => (
+                        <th key={cIdx} className={`border border-gray-400 p-2 bg-gray-100 ${col.toLowerCase() === 'no' ? 'text-center w-12' : 'text-left'}`}>
+                          {col}
+                        </th>
                       ))}
-                      <td className="border border-gray-400 p-2"></td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                  </thead>
+                  <tbody>
+                    {(section.Questions || []).map((q: Question, i: number) => (
+                      <tr key={i}>
+                        <td className="border border-gray-400 p-2 text-center">{i + 1}</td>
+                        <td className="border border-gray-400 p-2">{q.Question}</td>
+                         {Array.from({ length: Math.max(0, cols.length - 2) }).map((_, colIdx) => (
+                           <td key={colIdx} className="border border-gray-400 p-2"></td>
+                         ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              );
+            })()}
+
+            {section.type === "table" && (() => {
+              const answerOptions = section.Questions?.[0]?.answers || ["Belum Berkembang", "Mulai Berkembang", "Berkembang Sesuai Harapan", "Berkembang Sangat Baik"];
+              let cols = section.Headers?.length ? section.Headers : section.headers?.length ? section.headers : ["Pernyataan", "Nilai", "Predikat", "Keterangan"];
+              if (cols.length > 0 && cols[0].toLowerCase() !== "no") {
+                cols = ["No", ...cols];
+              } else if (cols.length === 0) {
+                cols = ["No", "Pernyataan", "Nilai", "Predikat", "Keterangan"];
+              }
+
+              return (
+                <table className="w-full border-collapse text-xs">
+                  <thead>
+                    <tr>
+                      {cols.map((col, cIdx) => (
+                        <th key={cIdx} className={`border border-gray-400 p-2 bg-gray-100 ${col.toLowerCase() === 'no' ? 'text-center w-12' : 'text-left'}`}>
+                          {col}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(section.Questions || []).map((q: Question, i: number) => (
+                      <tr key={i}>
+                        {cols.map((col, cIdx) => {
+                          if (col.toLowerCase() === 'no') {
+                            return <td key={cIdx} className="border border-gray-400 p-2 text-center">{i + 1}</td>;
+                          }
+                          if (cIdx === 1) {
+                            return <td key={cIdx} className="border border-gray-400 p-2">{q.Question}</td>;
+                          }
+                          if (col.toLowerCase() === 'predikat' || (cIdx === cols.length - 2 && !cols.some(c => c.toLowerCase() === 'predikat'))) {
+                            return (
+                              <td key={cIdx} className="border border-gray-400 p-2 text-center text-gray-500">
+                                [ {answerOptions[0]} ... ]
+                              </td>
+                            );
+                          }
+                          return <td key={cIdx} className="border border-gray-400 p-2"></td>;
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              );
+            })()}
 
             {section.type === "text" && (
               <div className="border border-gray-400 p-4 text-center text-gray-400 text-xs">

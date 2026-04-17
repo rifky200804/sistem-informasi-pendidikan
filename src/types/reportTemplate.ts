@@ -4,7 +4,9 @@ export interface Question {
   answer: string;
   answers: string[]; // Options for selection (for type 'table')
   photo: string;
+  photos?: any[]; // Support for multiple photos per section
   Ket: string;
+  predikat?: string;
 }
 
 // Section types based on API response
@@ -14,7 +16,10 @@ export type SectionType = 'table' | 'table_text' | 'text';
 export interface Section {
   id?: string;
   Section: string; // Section name/title
+  Title?: string;
   type: SectionType;
+  headers?: string[];
+  Headers?: string[];
   Questions: Question[];
 }
 
@@ -35,6 +40,7 @@ export interface ReportTemplateResponse {
   message: string;
   success: boolean;
   data: {
+    templateId?: string;
     title: string;
     year: number;
     data: Section[];

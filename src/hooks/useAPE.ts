@@ -1,103 +1,86 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { apeService, APE, CreateAPEData, UpdateAPEData } from '@/services/apeService';
+import { Pagination } from '@/types/api';
 import { useToast } from '@/hooks/use-toast';
 
 export const useAPE = () => {
   const [apeList, setApeList] = useState<APE[]>([]);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const fetchAPE = async () => {
+  const fetchAPE = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await apeService.getAll();
-      setApeList(data);
+      const result = await apeService.getAll(page, pageSize);
+      setApeList(result.data);
+      setPagination(result.pagination);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Gagal mengambil data APE';
       setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: errorMessage, variant: "destructive" });
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, pageSize]);
 
   const createAPE = async (data: CreateAPEData) => {
     try {
       setError(null);
-      const newAPE = await apeService.create(data);
-      setApeList([...apeList, newAPE]);
-      toast({
-        title: "Berhasil",
-        description: "Data APE berhasil ditambahkan",
-      });
-      return newAPE;
+      await apeService.create(data);
+      toast({ title: "Berhasil", description: "Data APE berhasil ditambahkan" });
+      fetchAPE();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Gagal menambahkan APE';
       setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: errorMessage, variant: "destructive" });
       throw err;
     }
   };
 
-  const updateAPE = async (id: string, data: UpdateAPEData) => {
+  const updateAPE = async (id: number | string, data: UpdateAPEData) => {
     try {
       setError(null);
-      const updatedAPE = await apeService.update(id, data);
-      setApeList(apeList.map(a => a.id === id ? updatedAPE : a));
-      toast({
-        title: "Berhasil",
-        description: "Data APE berhasil diupdate",
-      });
-      return updatedAPE;
+      await apeService.update(id, data);
+      toast({ title: "Berhasil", description: "Data APE berhasil diupdate" });
+      fetchAPE();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Gagal mengupdate APE';
       setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: errorMessage, variant: "destructive" });
       throw err;
     }
   };
 
-  const deleteAPE = async (id: string) => {
+  const deleteAPE = async (id: number | string) => {
     try {
       setError(null);
       await apeService.delete(id);
-      setApeList(apeList.filter(a => a.id !== id));
-      toast({
-        title: "Berhasil",
-        description: "Data APE berhasil dihapus",
-      });
+      toast({ title: "Berhasil", description: "Data APE berhasil dihapus" });
+      fetchAPE();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Gagal menghapus APE';
       setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: errorMessage, variant: "destructive" });
       throw err;
     }
   };
 
   useEffect(() => {
     fetchAPE();
-  }, []);
+  }, [fetchAPE]);
 
   return {
     apeList,
+    pagination,
+    page,
+    pageSize,
+    setPage,
+    setPageSize,
     loading,
     error,
     fetchAPE,

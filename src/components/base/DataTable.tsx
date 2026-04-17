@@ -24,6 +24,7 @@ export interface Column<T> {
   header: string;
   render?: (item: T) => React.ReactNode;
   filterable?: boolean;
+  filterType?: 'select'; 
 }
 
 export interface PaginationInfo {
@@ -60,26 +61,55 @@ export function DataTable<T extends Record<string, any>>({
   loading = false,
 }: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedColumn, setSelectedColumn] = useState<string>('all');
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
 
-  // Client-side filtering (when no server pagination)
+  // Client-side pagination state (used when no server pagination)
+  const [clientPage, setClientPage] = useState(1);
+  const [clientPageSize, setClientPageSize] = useState(10);
+
+  // Get columns that are designated as select filters
+  const selectFilterColumns = useMemo(() => {
+    return columns.filter(col => col.filterType === 'select');
+  }, [columns]);
+
+  // Dynamically extract unique options for each select filter
+  const selectFilterOptions = useMemo(() => {
+    const optionsMap: Record<string, string[]> = {};
+    selectFilterColumns.forEach(col => {
+      const uniqueVals = new Set<string>();
+      data.forEach(item => {
+        const val = item[col.key];
+        if (val !== null && val !== undefined && val !== '') {
+          uniqueVals.add(String(val));
+        }
+      });
+      optionsMap[String(col.key)] = Array.from(uniqueVals).sort();
+    });
+    return optionsMap;
+  }, [data, selectFilterColumns]);
+
+  // Client-side filtering
   const filteredData = useMemo(() => {
-    if (!searchTerm) return data;
-
     return data.filter((item) => {
-      if (selectedColumn === 'all') {
-        return columns.some((column) => {
-          const value = item[column.key];
-          if (typeof value === 'string') {
-            return value.toLowerCase().includes(searchTerm.toLowerCase());
+      // 1. Check Select Filters
+      let passesSelectFilters = true;
+      for (const [key, value] of Object.entries(activeFilters)) {
+        if (value && value !== 'all') {
+          if (String(item[key]) !== value) {
+            passesSelectFilters = false;
+            break;
           }
-          if (typeof value === 'number') {
-            return value.toString().includes(searchTerm);
-          }
-          return false;
-        });
-      } else {
-        const value = item[selectedColumn];
+        }
+      }
+
+      if (!passesSelectFilters) return false;
+
+      // 2. Check Text Search
+      if (!searchTerm) return true;
+
+      return columns.some((column) => {
+        if (column.filterable === false) return false;
+        const value = item[column.key];
         if (typeof value === 'string') {
           return value.toLowerCase().includes(searchTerm.toLowerCase());
         }
@@ -87,22 +117,52 @@ export function DataTable<T extends Record<string, any>>({
           return value.toString().includes(searchTerm);
         }
         return false;
-      }
+      });
     });
-  }, [data, searchTerm, selectedColumn, columns]);
+  }, [data, searchTerm, activeFilters, columns]);
 
-  const filterableColumns = columns.filter((col) => col.filterable !== false);
+  // Reset client page when filters change
+  useMemo(() => {
+    setClientPage(1);
+  }, [searchTerm, activeFilters]);
 
+  const isServerPaginated = !!pagination;
   const pageSizeOptions = [5, 10, 20, 50];
 
-  // Calculate display info
-  const displayData = pagination ? data : filteredData;
-  const totalItems = pagination ? pagination.totalItems : filteredData.length;
-  const currentPage = pagination?.page || 1;
-  const pageSize = pagination?.pageSize || displayData.length;
-  const totalPages = pagination?.totalPages || 1;
+  // Calculate pagination values
+  const currentPage = isServerPaginated ? (pagination?.page || 1) : clientPage;
+  const pageSize = isServerPaginated ? (pagination?.pageSize || 10) : clientPageSize;
+  const totalItems = isServerPaginated ? (pagination?.totalItems || 0) : filteredData.length;
+  const totalPages = isServerPaginated ? (pagination?.totalPages || 1) : Math.max(1, Math.ceil(filteredData.length / clientPageSize));
+  const hasPrevPage = isServerPaginated ? (pagination?.hasPrevPage || false) : clientPage > 1;
+  const hasNextPage = isServerPaginated ? (pagination?.hasNextPage || false) : clientPage < totalPages;
+
   const startItem = totalItems > 0 ? (currentPage - 1) * pageSize + 1 : 0;
   const endItem = Math.min(currentPage * pageSize, totalItems);
+
+  // Slice data for client-side pagination
+  const displayData = isServerPaginated
+    ? data
+    : filteredData.slice((clientPage - 1) * clientPageSize, clientPage * clientPageSize);
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    if (isServerPaginated) {
+      onPageChange?.(page);
+    } else {
+      setClientPage(page);
+    }
+  };
+
+  // Handle page size change
+  const handlePageSizeChange = (size: number) => {
+    if (isServerPaginated) {
+      onPageSizeChange?.(size);
+    } else {
+      setClientPageSize(size);
+      setClientPage(1);
+    }
+  };
 
   // Calculate visible page numbers (max 5)
   const getVisiblePages = useMemo(() => {
@@ -110,31 +170,25 @@ export function DataTable<T extends Record<string, any>>({
     const pages: (number | 'ellipsis-start' | 'ellipsis-end')[] = [];
 
     if (totalPages <= maxVisible) {
-      // Show all pages if total is 5 or less
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
       }
     } else {
-      // Calculate start and end of visible range
       let start = Math.max(1, currentPage - 2);
       let end = Math.min(totalPages, start + maxVisible - 1);
 
-      // Adjust start if we're near the end
       if (end - start < maxVisible - 1) {
         start = Math.max(1, end - maxVisible + 1);
       }
 
-      // Add ellipsis at start if needed
       if (start > 1) {
         pages.push('ellipsis-start');
       }
 
-      // Add visible page numbers
       for (let i = start; i <= end; i++) {
         pages.push(i);
       }
 
-      // Add ellipsis at end if needed
       if (end < totalPages) {
         pages.push('ellipsis-end');
       }
@@ -143,9 +197,18 @@ export function DataTable<T extends Record<string, any>>({
     return pages;
   }, [currentPage, totalPages]);
 
+  const handleFilterChange = (key: string, value: string) => {
+    setActiveFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const hasActiveFilters = searchTerm !== '' || Object.values(activeFilters).some(v => v !== 'all' && v !== '');
+
   return (
     <div className="space-y-4">
-      {/* Search Bar with Column Filter */}
+      {/* Search Bar with Column Filters */}
       {searchable && (
         <div className="flex items-center gap-2 flex-wrap">
           <div className="relative flex-1 min-w-[200px] max-w-sm">
@@ -158,26 +221,37 @@ export function DataTable<T extends Record<string, any>>({
               className="pl-10"
             />
           </div>
-          <Select value={selectedColumn} onValueChange={setSelectedColumn}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter kolom" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua Kolom</SelectItem>
-              {filterableColumns.map((column) => (
-                <SelectItem key={String(column.key)} value={String(column.key)}>
-                  {column.header}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {(searchTerm || selectedColumn !== 'all') && (
+          
+          {selectFilterColumns.map(col => {
+            const keyStr = String(col.key);
+            return (
+              <Select 
+                key={keyStr} 
+                value={activeFilters[keyStr] || 'all'} 
+                onValueChange={(val) => handleFilterChange(keyStr, val)}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder={`Filter ${col.header}`} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua {col.header}</SelectItem>
+                  {(selectFilterOptions[keyStr] || []).map((opt) => (
+                    <SelectItem key={opt} value={opt}>
+                      {opt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            );
+          })}
+
+          {hasActiveFilters && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => {
                 setSearchTerm('');
-                setSelectedColumn('all');
+                setActiveFilters({});
               }}
               className="text-muted-foreground"
             >
@@ -211,7 +285,7 @@ export function DataTable<T extends Record<string, any>>({
               ) : displayData.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={columns.length} className="text-center py-8 text-muted-foreground">
-                    Tidak ada data
+                    Tidak ada data yang cocok dengan pencarian
                   </TableCell>
                 </TableRow>
               ) : (
@@ -238,104 +312,100 @@ export function DataTable<T extends Record<string, any>>({
         </div>
       </div>
 
-      {/* Pagination */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="text-sm text-muted-foreground">
-          {totalItems > 0 ? (
-            <>Menampilkan {startItem}-{endItem} dari {totalItems} data</>
-          ) : (
-            'Tidak ada data'
-          )}
-        </div>
+      {/* Pagination - always shown when there's data */}
+      {totalItems > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-sm text-muted-foreground">
+            Menampilkan {startItem}-{endItem} dari {totalItems} data
+          </div>
 
-        {pagination && totalPages > 0 && (
           <div className="flex items-center gap-2">
             {/* Page size selector */}
-            {onPageSizeChange && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Per halaman:</span>
-                <Select
-                  value={String(pageSize)}
-                  onValueChange={(value) => onPageSizeChange(Number(value))}
-                >
-                  <SelectTrigger className="w-[70px] h-8">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {pageSizeOptions.map((size) => (
-                      <SelectItem key={size} value={String(size)}>
-                        {size}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Per halaman:</span>
+              <Select
+                value={String(pageSize)}
+                onValueChange={(value) => handlePageSizeChange(Number(value))}
+              >
+                <SelectTrigger className="w-[70px] h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {pageSizeOptions.map((size) => (
+                    <SelectItem key={size} value={String(size)}>
+                      {size}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
             {/* Pagination controls */}
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => onPageChange?.(1)}
-                disabled={!pagination.hasPrevPage}
-              >
-                <ChevronsLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => onPageChange?.(currentPage - 1)}
-                disabled={!pagination.hasPrevPage}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-
-              {/* Page numbers */}
+            {totalPages > 1 && (
               <div className="flex items-center gap-1">
-                {getVisiblePages.map((page, index) => (
-                  typeof page === 'number' ? (
-                    <Button
-                      key={page}
-                      variant={page === currentPage ? 'default' : 'outline'}
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => onPageChange?.(page)}
-                    >
-                      {page}
-                    </Button>
-                  ) : (
-                    <span key={`${page}-${index}`} className="px-2 text-muted-foreground">
-                      ...
-                    </span>
-                  )
-                ))}
-              </div>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => handlePageChange(1)}
+                  disabled={!hasPrevPage}
+                >
+                  <ChevronsLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={!hasPrevPage}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
 
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => onPageChange?.(currentPage + 1)}
-                disabled={!pagination.hasNextPage}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => onPageChange?.(totalPages)}
-                disabled={!pagination.hasNextPage}
-              >
-                <ChevronsRight className="h-4 w-4" />
-              </Button>
-            </div>
+                {/* Page numbers */}
+                <div className="flex items-center gap-1">
+                  {getVisiblePages.map((page, index) => (
+                    typeof page === 'number' ? (
+                      <Button
+                        key={page}
+                        variant={page === currentPage ? 'default' : 'outline'}
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handlePageChange(page)}
+                      >
+                        {page}
+                      </Button>
+                    ) : (
+                      <span key={`${page}-${index}`} className="px-2 text-muted-foreground">
+                        ...
+                      </span>
+                    )
+                  ))}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={!hasNextPage}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => handlePageChange(totalPages)}
+                  disabled={!hasNextPage}
+                >
+                  <ChevronsRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
