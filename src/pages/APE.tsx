@@ -1,78 +1,24 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Package, Edit, Trash2 } from "lucide-react";
+import { Plus, Package, Edit, Trash2, Eye, X } from "lucide-react";
 import { DataTable, Column } from "@/components/base/DataTable";
 import { Badge } from "@/components/ui/badge";
 import { APEForm } from "@/components/forms/APEForm";
 import { DeleteConfirmDialog } from "@/components/dialogs/DeleteConfirmDialog";
 import { useAPE } from "@/hooks/useAPE";
 import { CreateAPEData, APE as APEType } from "@/services/apeService";
-
-interface APE {
-  id: string;
-  name: string;
-  category: string;
-  quantity: number;
-  condition: string;
-  location: string;
-  ageGroup: string;
-}
-
-const mockAPE: APE[] = [
-  { id: 'APE-001', name: 'Puzzle Kayu Bentuk Geometri', category: 'Kognitif', quantity: 15, condition: 'Baik', location: 'Kelas A', ageGroup: '3-4 tahun' },
-  { id: 'APE-002', name: 'Balok Susun Warna-Warni', category: 'Motorik Halus', quantity: 20, condition: 'Baik', location: 'Kelas B', ageGroup: '4-5 tahun' },
-  { id: 'APE-003', name: 'Bola Karet Besar', category: 'Motorik Kasar', quantity: 10, condition: 'Rusak Ringan', location: 'Ruang Olahraga', ageGroup: '3-5 tahun' },
-  { id: 'APE-004', name: 'Set Alat Musik Mini', category: 'Seni & Kreativitas', quantity: 8, condition: 'Baik', location: 'Ruang Musik', ageGroup: '4-6 tahun' },
-  { id: 'APE-005', name: 'Papan Tulis Mini + Spidol', category: 'Literasi', quantity: 12, condition: 'Baik', location: 'Kelas C', ageGroup: '5-6 tahun' },
-  { id: 'APE-006', name: 'Boneka Tangan Profesi', category: 'Sosial Emosional', quantity: 6, condition: 'Baik', location: 'Ruang Bermain', ageGroup: '3-5 tahun' },
-];
-
-const columns: Column<APE>[] = [
-  { key: 'id', header: 'Kode APE' },
-  {
-    key: 'name',
-    header: 'Nama APE',
-    render: (item) => item.name ? (
-      <div className="flex items-center gap-2">
-        <Package className="w-4 h-4 text-primary" />
-        <span className="font-medium">{item.name}</span>
-      </div>
-    ) : "-",
-  },
-  {
-    key: 'category',
-    header: 'Kategori',
-    render: (item) => (
-      <Badge variant="outline">{item.category}</Badge>
-    ),
-  },
-  {
-    key: 'quantity',
-    header: 'Jumlah',
-    render: (item) => (
-      <span className="font-semibold">{item.quantity} unit</span>
-    ),
-  },
-  {
-    key: 'condition',
-    header: 'Kondisi',
-    render: (item) => (
-      <Badge variant={item.condition === 'Baik' ? 'default' : 'destructive'}>
-        {item.condition}
-      </Badge>
-    ),
-  },
-  { key: 'location', header: 'Lokasi' },
-  { key: 'ageGroup', header: 'Kelompok Usia' },
-];
+import { getFileUrl } from "@/lib/fileUrl";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 const APE = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [selectedAPE, setSelectedAPE] = useState<APEType | undefined>();
-  const [deleteId, setDeleteId] = useState<string>("");
-  const { apeList, loading, createAPE, updateAPE, deleteAPE } = useAPE();
+  const [deleteId, setDeleteId] = useState<number | string>("");
+  const { apeList, pagination, page, pageSize, setPage, setPageSize, loading, createAPE, updateAPE, deleteAPE } = useAPE();
 
   const handleCreate = async (data: CreateAPEData) => {
     await createAPE(data);
@@ -90,7 +36,7 @@ const APE = () => {
     }
   };
 
-  const handleDeleteClick = (id: string) => {
+  const handleDeleteClick = (id: number | string) => {
     setDeleteId(id);
     setIsDeleteOpen(true);
   };
@@ -106,23 +52,40 @@ const APE = () => {
     setSelectedAPE(undefined);
   };
 
+  const handlePreview = (imagePath: string) => {
+    setPreviewImage(getFileUrl(imagePath));
+    setIsPreviewOpen(true);
+  };
+
   const apeColumns: Column<any>[] = [
-    { key: 'id', header: 'Kode APE' },
     {
       key: 'name',
       header: 'Nama APE',
-      render: (item) => item.name ? (
-        <div className="flex items-center gap-2">
-          <Package className="w-4 h-4 text-primary" />
+      render: (item) => (
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded border bg-muted overflow-hidden flex-shrink-0 flex items-center justify-center">
+            {item.imageUrl || item.photo ? (
+              <img 
+                src={getFileUrl(item.imageUrl || item.photo)} 
+                alt={item.name} 
+                className="w-full h-full object-cover cursor-pointer hover:scale-110 transition-transform"
+                onClick={() => handlePreview(item.imageUrl || item.photo)}
+              />
+            ) : (
+              <Package className="w-5 h-5 text-muted-foreground" />
+            )}
+          </div>
           <span className="font-medium">{item.name}</span>
         </div>
-      ) : "-",
+      ),
     },
     {
-      key: 'category',
-      header: 'Kategori',
+      key: 'condition',
+      header: 'Kondisi',
       render: (item) => (
-        <Badge variant="outline">{item.category}</Badge>
+        <Badge variant={item.condition === 'Baik' ? 'default' : 'secondary'}>
+          {item.condition || "-"}
+        </Badge>
       ),
     },
     {
@@ -132,34 +95,31 @@ const APE = () => {
         <span className="font-semibold">{item.quantity} unit</span>
       ),
     },
-    {
-      key: 'condition',
-      header: 'Kondisi',
-      render: (item) => (
-        <Badge variant={item.condition === 'Baik' || item.condition === 'baik' ? 'default' : 'destructive'}>
-          {item.condition}
-        </Badge>
-      ),
+    { 
+      key: 'location', 
+      header: 'Lokasi',
+      render: (item) => item.location || <span className="text-muted-foreground">-</span>,
     },
-    { key: 'location', header: 'Lokasi' },
-    { key: 'ageGroup', header: 'Kelompok Usia' },
     {
-      key: 'id',
+      key: 'actions',
       header: 'Aksi',
       render: (item) => (
         <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={() => handleEdit(item)}>
+          {item.imageUrl || item.photo ? (
+            <Button variant="ghost" size="sm" onClick={() => handlePreview((item.imageUrl || item.photo) as string)} title="Pratinjau Gambar">
+              <Eye className="w-4 h-4 text-blue-500" />
+            </Button>
+          ) : null}
+          <Button variant="ghost" size="sm" onClick={() => handleEdit(item)} title="Edit">
             <Edit className="w-4 h-4" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(item.id)}>
+          <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(item.id)} title="Hapus">
             <Trash2 className="w-4 h-4 text-destructive" />
           </Button>
         </div>
       ),
     },
   ];
-
-  const displayData = loading ? mockAPE : (apeList.length > 0 ? apeList : mockAPE);
 
   return (
     <div className="space-y-6">
@@ -178,10 +138,17 @@ const APE = () => {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-foreground">Daftar APE</h2>
           <p className="text-sm text-muted-foreground">
-            Total: {displayData.reduce((acc, item) => acc + item.quantity, 0)} unit dari {displayData.length} jenis
+            Total: {apeList.reduce((acc, item) => acc + item.quantity, 0)} unit dari {apeList.length} jenis
           </p>
         </div>
-        <DataTable data={displayData} columns={apeColumns} />
+        <DataTable
+          data={apeList}
+          columns={apeColumns}
+          pagination={pagination || undefined}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+          loading={loading}
+        />
       </Card>
 
       <APEForm
@@ -198,6 +165,29 @@ const APE = () => {
         title="Hapus Data APE"
         description="Apakah Anda yakin ingin menghapus data APE ini? Tindakan ini tidak dapat dibatalkan."
       />
+
+      {/* Image Preview Lightbox */}
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="max-w-3xl p-1 bg-transparent border-none shadow-none flex items-center justify-center">
+          {previewImage && (
+            <div className="relative group">
+              <img 
+                src={previewImage} 
+                alt="APE Preview" 
+                className="max-h-[85vh] rounded-lg shadow-2xl"
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                className="absolute -top-4 -right-4 bg-background rounded-full p-2 h-10 w-10 shadow-lg"
+                onClick={() => setIsPreviewOpen(false)}
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

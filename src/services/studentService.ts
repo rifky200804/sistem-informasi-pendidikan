@@ -1,41 +1,43 @@
 import { api } from './api';
-import { ApiResponse, PaginatedData } from '../types/api';
+import { ApiResponse, PaginatedData, PaginatedResult, SelectOption } from '../types/api';
 
 export interface Student {
-  id: string;
+  id: number;
   name: string;
+  identifier: string;
   nisn: string;
-  birthDate: string;
-  gender: 'L' | 'P';
+  className: string;
+  tahunAjaran: string;
   parentName: string;
   parentPhone: string;
   address: string;
-  class: string;
-  status: 'active' | 'inactive' | 'graduated';
+  photoUrl: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateStudentData {
   name: string;
+  identifier: string;
   nisn: string;
-  birthDate: string;
-  gender: 'L' | 'P';
+  className: string;
+  tahunAjaran: string;
   parentName: string;
   parentPhone: string;
   address: string;
-  class: string;
-  status: 'active' | 'inactive' | 'graduated';
 }
 
 export interface UpdateStudentData extends Partial<CreateStudentData> {}
 
 export const studentService = {
-  async getAll(): Promise<Student[]> {
-    const response = await api.get<ApiResponse<PaginatedData<Student>>>('/students');
-    return response.data.data.data;
+  async getAll(page = 1, pageSize = 10): Promise<PaginatedResult<Student>> {
+    const response = await api.get<ApiResponse<PaginatedData<Student>>>('/students', {
+      params: { page, pageSize }
+    });
+    return response.data.data;
   },
 
-  async getById(id: string): Promise<Student> {
+  async getById(id: number): Promise<Student> {
     const response = await api.get<ApiResponse<Student>>(`/students/${id}`);
     return response.data.data;
   },
@@ -45,12 +47,17 @@ export const studentService = {
     return response.data.data;
   },
 
-  async update(id: string, data: UpdateStudentData): Promise<Student> {
+  async update(id: number, data: UpdateStudentData): Promise<Student> {
     const response = await api.put<ApiResponse<Student>>(`/students/${id}`, data);
     return response.data.data;
   },
 
-  async delete(id: string): Promise<void> {
+  async delete(id: number): Promise<void> {
     await api.delete<ApiResponse<void>>(`/students/${id}`);
+  },
+
+  async getOptions(): Promise<SelectOption[]> {
+    const response = await api.get<ApiResponse<SelectOption[]>>('/students/options');
+    return response.data?.data || [];
   },
 };

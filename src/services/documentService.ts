@@ -1,15 +1,19 @@
 import { api } from './api';
-import { ApiResponse, PaginatedData } from '../types/api';
+import { ApiResponse, PaginatedData, PaginatedResult } from '../types/api';
 
 export interface Document {
   id: string;
   title: string;
   type: 'rapor' | 'laporan' | 'sertifikat' | 'lainnya';
+  category?: string;
+  filePath?: string;
   fileName: string;
   fileUrl: string;
   fileSize: number;
   uploadedBy: string;
+  uploadedById?: number;
   studentId?: string;
+  documentDate?: string;
   uploadedAt: string;
 }
 
@@ -27,9 +31,11 @@ export interface UpdateDocumentData {
 }
 
 export const documentService = {
-  async getAll(): Promise<Document[]> {
-    const response = await api.get<ApiResponse<PaginatedData<Document>>>('/documents');
-    return response.data.data.data;
+  async getAll(page = 1, pageSize = 10): Promise<PaginatedResult<Document>> {
+    const response = await api.get<ApiResponse<PaginatedData<Document>>>('/documents', {
+      params: { page, pageSize }
+    });
+    return response.data.data;
   },
 
   async getById(id: string): Promise<Document> {

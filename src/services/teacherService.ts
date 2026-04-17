@@ -1,98 +1,56 @@
 import { api } from './api';
-import { ApiResponse, PaginatedData } from '../types/api';
+import { ApiResponse, PaginatedData, PaginatedResult, SelectOption } from '../types/api';
 import { User } from './userService'; // Import User type for mapping if needed, or just map locally
 
-export type TeacherRole = 'ADMIN' | 'KEPALA SEKOLAH' | 'GURU';
+export type TeacherRole = 'ADMIN' | 'KEPALA_SEKOLAH' | 'GURU';
 
 export interface Teacher {
-  id: string;
+  id: number;
   name: string;
   email: string;
-  phone: string;
-  subject: string;
   role: TeacherRole;
-  status: 'active' | 'inactive';
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateTeacherData {
   name: string;
   email: string;
-  phone: string;
-  subject: string;
   role: TeacherRole;
   password?: string;
-  status: 'active' | 'inactive';
 }
 
 export interface UpdateTeacherData extends Partial<CreateTeacherData> {}
 
 export const teacherService = {
-  async getAll(): Promise<Teacher[]> {
-    const response = await api.get<ApiResponse<PaginatedData<any>>>('/users'); // Using any to allow mapping to Teacher
-    // Map User to Teacher structure
-    return response.data.data.data.map((user: any) => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone || '-', // Fallback if missing
-      subject: user.subject || '-', // Fallback if missing
-      role: (user.role as TeacherRole) || 'GURU',
-      status: user.status === 'active' ? 'active' : 'inactive',
-      createdAt: user.createdAt || new Date().toISOString(),
-    }));
+  async getAll(page = 1, pageSize = 10): Promise<PaginatedResult<Teacher>> {
+    const response = await api.get<ApiResponse<PaginatedData<Teacher>>>('/users', {
+      params: { page, pageSize }
+    });
+    return response.data.data;
   },
 
-  async getById(id: string): Promise<Teacher> {
-    const response = await api.get<ApiResponse<any>>(`/users/${id}`);
-    const user = response.data.data;
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone || '-',
-      subject: user.subject || '-',
-      role: (user.role as TeacherRole) || 'GURU',
-      status: user.status === 'active' ? 'active' : 'inactive',
-      createdAt: user.createdAt || new Date().toISOString(),
-    };
+  async getById(id: number): Promise<Teacher> {
+    const response = await api.get<ApiResponse<Teacher>>(`/users/${id}`);
+    return response.data.data;
   },
 
   async create(data: CreateTeacherData): Promise<Teacher> {
-    // Map CreateTeacherData to CreateUserData if needed, or just pass data as is if compatible
-    const response = await api.post<ApiResponse<any>>('/users', {
-      ...data,
-      role: data.role || 'GURU' // Ensure role is set
-    });
-    const user = response.data.data;
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone || '-',
-      subject: user.subject || '-',
-      role: (user.role as TeacherRole) || 'GURU',
-      status: user.status === 'active' ? 'active' : 'inactive',
-      createdAt: user.createdAt || new Date().toISOString(),
-    };
+    const response = await api.post<ApiResponse<Teacher>>('/users', data);
+    return response.data.data;
   },
 
-  async update(id: string, data: UpdateTeacherData): Promise<Teacher> {
-    const response = await api.put<ApiResponse<any>>(`/users/${id}`, data);
-    const user = response.data.data;
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone || '-',
-      subject: user.subject || '-',
-      role: (user.role as TeacherRole) || 'GURU',
-      status: user.status === 'active' ? 'active' : 'inactive',
-      createdAt: user.createdAt || new Date().toISOString(),
-    };
+  async update(id: number, data: UpdateTeacherData): Promise<Teacher> {
+    const response = await api.put<ApiResponse<Teacher>>(`/users/${id}`, data);
+    return response.data.data;
   },
 
-  async delete(id: string): Promise<void> {
+  async delete(id: number): Promise<void> {
     await api.delete<ApiResponse<void>>(`/users/${id}`);
+  },
+
+  async getTeacherOptions(): Promise<SelectOption[]> {
+    const response = await api.get<ApiResponse<SelectOption[]>>('/users/options/teachers');
+    return response.data?.data || [];
   },
 };

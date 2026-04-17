@@ -9,6 +9,8 @@ import {
   Blocks,
   FileEdit,
   Settings,
+  HelpCircle,
+  Activity,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -32,6 +34,8 @@ const menuItems = [
   { title: 'Rapor Perkembangan', url: '/progress-reports', icon: ClipboardList },
   { title: 'Data APE', url: '/ape', icon: Blocks },
   { title: 'Template Rapor', url: '/report-templates', icon: FileEdit },
+  { title: 'Soal', url: '/soal', icon: HelpCircle },
+  { title: 'Log Aktivitas', url: '/activity-logs', icon: Activity },
   { title: 'Pengaturan', url: '/settings', icon: Settings },
 ];
 
@@ -55,7 +59,7 @@ export function AppSidebar() {
           </div>
           {!collapsed && (
             <div>
-              <h2 className="font-bold text-sidebar-foreground">SIMPEG</h2>
+              <h2 className="font-bold text-sidebar-foreground">SIMP</h2>
               <p className="text-xs text-sidebar-foreground/60">Sistem Informasi Pendidikan</p>
             </div>
           )}

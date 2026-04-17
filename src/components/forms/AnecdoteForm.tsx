@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -29,13 +29,18 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { CreateAnecdoteData, Anecdote } from "@/services/anecdoteService";
+import { studentService } from "@/services/studentService";
+import { teacherService } from "@/services/teacherService";
+import { SelectOption } from "@/types/api";
 
 const anecdoteSchema = z.object({
-  title: z.string().min(1, "Judul wajib diisi"),
-  content: z.string().min(1, "Konten wajib diisi"),
-  studentId: z.string().min(1, "Murid wajib dipilih"),
+  content: z.string().min(1, "Judul wajib diisi"),
+  description: z.string().optional(),
   date: z.string().min(1, "Tanggal wajib diisi"),
   category: z.enum(["prestasi", "perilaku", "kesehatan", "umum"]),
+  studentId: z.coerce.number().optional(),
+  teacherId: z.coerce.number().optional(),
+  image: z.any().optional(),
 });
 
 interface AnecdoteFormProps {
@@ -46,40 +51,67 @@ interface AnecdoteFormProps {
 }
 
 export function AnecdoteForm({ open, onOpenChange, onSubmit, anecdote }: AnecdoteFormProps) {
+  const [studentOptions, setStudentOptions] = useState<SelectOption[]>([]);
+  const [teacherOptions, setTeacherOptions] = useState<SelectOption[]>([]);
+  const [loadingOptions, setLoadingOptions] = useState(false);
+
   const form = useForm<CreateAnecdoteData>({
     resolver: zodResolver(anecdoteSchema),
     defaultValues: anecdote ? {
-      title: anecdote.title,
-      content: anecdote.content,
-      studentId: anecdote.studentId,
-      date: anecdote.date,
-      category: anecdote.category,
+      content: anecdote.content || "",
+      description: anecdote.description || "",
+      date: anecdote.date || new Date().toISOString().split('T')[0],
+      category: anecdote.category as any || "umum",
+      studentId: anecdote.studentId ? Number(anecdote.studentId) : undefined,
+      teacherId: anecdote.teacherId || undefined,
     } : {
-      title: "",
       content: "",
-      studentId: "",
+      description: "",
       date: new Date().toISOString().split('T')[0],
       category: "umum",
+      studentId: undefined,
+      teacherId: undefined,
     },
   });
 
   useEffect(() => {
     if (open) {
       form.reset(anecdote ? {
-        title: anecdote.title,
-        content: anecdote.content,
-        studentId: anecdote.studentId,
-        date: anecdote.date,
-        category: anecdote.category,
+        content: anecdote.content || "",
+        description: anecdote.description || "",
+        date: anecdote.date || new Date().toISOString().split('T')[0],
+        category: anecdote.category as any || "umum",
+        studentId: anecdote.studentId ? Number(anecdote.studentId) : undefined,
+        teacherId: anecdote.teacherId || undefined,
       } : {
-        title: "",
         content: "",
-        studentId: "",
+        description: "",
         date: new Date().toISOString().split('T')[0],
         category: "umum",
+        studentId: undefined,
+        teacherId: undefined,
       });
+
+      // Fetch options when dialog is opened
+      fetchOptions();
     }
   }, [open, anecdote, form]);
+
+  const fetchOptions = async () => {
+    setLoadingOptions(true);
+    try {
+      const [students, teachers] = await Promise.all([
+        studentService.getOptions(),
+        teacherService.getTeacherOptions(),
+      ]);
+      setStudentOptions(students);
+      setTeacherOptions(teachers);
+    } catch (error) {
+      console.error("Gagal memuat opsi siswa/guru:", error);
+    } finally {
+      setLoadingOptions(false);
+    }
+  };
 
   const handleSubmit = async (data: CreateAnecdoteData) => {
     await onSubmit(data);
@@ -98,22 +130,68 @@ export function AnecdoteForm({ open, onOpenChange, onSubmit, anecdote }: Anecdot
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+
             <FormField
               control={form.control}
               name="studentId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>ID Murid</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Masukkan ID murid" {...field} />
-                  </FormControl>
+                  <FormLabel>Siswa</FormLabel>
+                  <Select
+                    onValueChange={(val) => field.onChange(Number(val))}
+                    value={field.value ? String(field.value) : ""}
+                    disabled={loadingOptions}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={loadingOptions ? "Memuat..." : "Pilih siswa"} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Array.isArray(studentOptions) && studentOptions.map((opt, idx) => (
+                        <SelectItem key={opt.value || idx} value={opt.value ? String(opt.value) : `opt-${idx}`}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
-              name="title"
+              name="teacherId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Guru</FormLabel>
+                  <Select
+                    onValueChange={(val) => field.onChange(Number(val))}
+                    value={field.value ? String(field.value) : ""}
+                    disabled={loadingOptions}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={loadingOptions ? "Memuat..." : "Pilih guru"} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Array.isArray(teacherOptions) && teacherOptions.map((opt, idx) => (
+                        <SelectItem key={opt.value || idx} value={opt.value ? String(opt.value) : `opt-${idx}`}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="content"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Judul Aktivitas</FormLabel>
@@ -162,7 +240,7 @@ export function AnecdoteForm({ open, onOpenChange, onSubmit, anecdote }: Anecdot
             />
             <FormField
               control={form.control}
-              name="content"
+              name="description"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Deskripsi</FormLabel>
@@ -171,6 +249,27 @@ export function AnecdoteForm({ open, onOpenChange, onSubmit, anecdote }: Anecdot
                       placeholder="Tuliskan detail aktivitas atau perkembangan murid..." 
                       className="min-h-[100px]"
                       {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="image"
+              render={({ field: { value, onChange, ...fieldProps } }) => (
+                <FormItem>
+                  <FormLabel>Foto Dokumentasi (Opsional)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        onChange(file);
+                      }}
+                      {...fieldProps}
                     />
                   </FormControl>
                   <FormMessage />

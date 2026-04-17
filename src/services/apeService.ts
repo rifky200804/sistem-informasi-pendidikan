@@ -1,57 +1,72 @@
 import { api } from './api';
-import { ApiResponse, PaginatedData } from '../types/api';
+import { ApiResponse, PaginatedData, PaginatedResult } from '../types/api';
 
 export interface APE {
-  id: string;
+  id: number;
   name: string;
-  code: string;
-  category: 'indoor' | 'outdoor' | 'edukatif' | 'kreativitas';
+  condition: string;
   quantity: number;
-  condition: 'baik' | 'rusak' | 'hilang';
   location: string;
-  purchaseDate: string;
-  price: number;
-  notes: string;
+  photo?: string | null;
+  imageUrl?: string | null;
   createdAt: string;
   updatedAt: string;
+  createdById: number;
+  updatedById: number;
 }
 
 export interface CreateAPEData {
   name: string;
-  code: string;
-  category: 'indoor' | 'outdoor' | 'edukatif' | 'kreativitas';
+  condition: string;
   quantity: number;
-  condition: 'baik' | 'rusak' | 'hilang';
   location: string;
-  purchaseDate: string;
-  price: number;
-  notes: string;
+  photo?: File | null;
 }
 
 export type UpdateAPEData = Partial<CreateAPEData>;
 
 export const apeService = {
-  async getAll(): Promise<APE[]> {
-    const response = await api.get<ApiResponse<PaginatedData<APE>>>('/ape');
-    return response.data.data.data;
+  async getAll(page = 1, pageSize = 10): Promise<PaginatedResult<APE>> {
+    const response = await api.get<ApiResponse<PaginatedData<APE>>>('/ape', {
+      params: { page, pageSize }
+    });
+    return response.data.data;
   },
 
-  async getById(id: string): Promise<APE> {
+  async getById(id: number | string): Promise<APE> {
     const response = await api.get<ApiResponse<APE>>(`/ape/${id}`);
     return response.data.data;
   },
 
   async create(data: CreateAPEData): Promise<APE> {
-    const response = await api.post<ApiResponse<APE>>('/ape', data);
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        formData.append(key, value instanceof File ? value : String(value));
+      }
+    });
+
+    const response = await api.post<ApiResponse<APE>>('/ape', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
     return response.data.data;
   },
 
-  async update(id: string, data: UpdateAPEData): Promise<APE> {
-    const response = await api.put<ApiResponse<APE>>(`/ape/${id}`, data);
+  async update(id: number | string, data: UpdateAPEData): Promise<APE> {
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        formData.append(key, value instanceof File ? value : String(value));
+      }
+    });
+
+    const response = await api.put<ApiResponse<APE>>(`/ape/${id}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
     return response.data.data;
   },
 
-  async delete(id: string): Promise<void> {
+  async delete(id: number | string): Promise<void> {
     await api.delete<ApiResponse<void>>(`/ape/${id}`);
   },
 };

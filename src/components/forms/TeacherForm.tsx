@@ -32,11 +32,8 @@ import { CreateTeacherData, Teacher } from "@/services/teacherService";
 const teacherSchema = z.object({
   name: z.string().min(1, "Nama wajib diisi"),
   email: z.string().email("Email tidak valid"),
-  phone: z.string().min(1, "Nomor telepon wajib diisi"),
-  subject: z.string().min(1, "Mata pelajaran wajib diisi"),
-  role: z.enum(["ADMIN", "KEPALA SEKOLAH", "GURU"]),
+  role: z.enum(["ADMIN", "KEPALA_SEKOLAH", "GURU"]),
   password: z.string().optional(),
-  status: z.enum(["active", "inactive"]),
 });
 
 interface TeacherFormProps {
@@ -52,11 +49,8 @@ export function TeacherForm({ open, onOpenChange, onSubmit, teacher }: TeacherFo
     defaultValues: teacher || {
       name: "",
       email: "",
-      phone: "",
-      subject: "",
       role: "GURU",
       password: "",
-      status: "active",
     },
   });
 
@@ -65,11 +59,8 @@ export function TeacherForm({ open, onOpenChange, onSubmit, teacher }: TeacherFo
       form.reset(teacher || {
         name: "",
         email: "",
-        phone: "",
-        subject: "",
         role: "GURU",
         password: "",
-        status: "active",
       });
     }
   }, [open, teacher, form]);
@@ -119,32 +110,6 @@ export function TeacherForm({ open, onOpenChange, onSubmit, teacher }: TeacherFo
             />
             <FormField
               control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nomor Telepon</FormLabel>
-                  <FormControl>
-                    <Input placeholder="08xxxxxxxxxx" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="subject"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Mata Pelajaran</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Contoh: Matematika" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
               name="role"
               render={({ field }) => (
                 <FormItem>
@@ -157,7 +122,7 @@ export function TeacherForm({ open, onOpenChange, onSubmit, teacher }: TeacherFo
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="ADMIN">ADMIN</SelectItem>
-                      <SelectItem value="KEPALA SEKOLAH">KEPALA SEKOLAH</SelectItem>
+                      <SelectItem value="KEPALA_SEKOLAH">KEPALA SEKOLAH</SelectItem>
                       <SelectItem value="GURU">GURU</SelectItem>
                     </SelectContent>
                   </Select>
@@ -174,27 +139,6 @@ export function TeacherForm({ open, onOpenChange, onSubmit, teacher }: TeacherFo
                   <FormControl>
                     <Input type="password" placeholder="Masukkan password" {...field} />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Pilih status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="active">Aktif</SelectItem>
-                      <SelectItem value="inactive">Tidak Aktif</SelectItem>
-                    </SelectContent>
-                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

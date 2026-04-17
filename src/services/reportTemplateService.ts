@@ -14,7 +14,7 @@ export const reportTemplateService = {
       const response = await api.get<ReportTemplateResponse>('/rapor/templates/active');
       if (response.data && response.data.success && response.data.data) {
         return [{
-          id: response.data.data.title + response.data.data.year, // temporary id if none provided
+          id: response.data.data?.templateId , // temporary id if none provided
           title: response.data.data.title,
           year: response.data.data.year,
           data: response.data.data.data,
@@ -33,6 +33,7 @@ export const reportTemplateService = {
       const response = await api.get<ReportTemplateResponse>('/rapor/templates/active');
       if (response.data.success && response.data.data) {
         return {
+          id: response.data.data?.templateId , // temporary id if none provided
           title: response.data.data.title,
           year: response.data.data.year,
           data: response.data.data.data

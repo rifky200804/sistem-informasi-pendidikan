@@ -37,7 +37,7 @@ export const ImageCropDialog = ({
   onOpenChange,
   imageSrc,
   onCropComplete,
-  aspectRatio = 1
+  aspectRatio
 }: ImageCropDialogProps) => {
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
@@ -45,7 +45,17 @@ export const ImageCropDialog = ({
 
   const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const { width, height } = e.currentTarget;
-    setCrop(centerAspectCrop(width, height, aspectRatio));
+    if (aspectRatio) {
+      setCrop(centerAspectCrop(width, height, aspectRatio));
+    } else {
+      setCrop({
+        unit: '%',
+        width: 90,
+        height: 90,
+        x: 5,
+        y: 5
+      });
+    }
   }, [aspectRatio]);
 
   const getCroppedImg = useCallback(() => {
@@ -60,22 +70,43 @@ export const ImageCropDialog = ({
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
 
-    canvas.width = completedCrop.width;
-    canvas.height = completedCrop.height;
+    // Hitung ukuran asli area pemotongan berdasarkan gambar natural
+    const cropNativeWidth = completedCrop.width * scaleX;
+    const cropNativeHeight = completedCrop.height * scaleY;
 
+    // Batasi maksimum resolusi ke 1200px agar payload ringan tapi teks tetap sangat fokus (terbaca)
+    const MAX_DIM = 1200;
+    let finalWidth = cropNativeWidth;
+    let finalHeight = cropNativeHeight;
+
+    if (Math.max(finalWidth, finalHeight) > MAX_DIM) {
+      if (finalWidth > finalHeight) {
+        finalHeight = Math.round(finalHeight * (MAX_DIM / finalWidth));
+        finalWidth = MAX_DIM;
+      } else {
+        finalWidth = Math.round(finalWidth * (MAX_DIM / finalHeight));
+        finalHeight = MAX_DIM;
+      }
+    }
+
+    // Hindari upscale jika gambar aslinya kecil
+    canvas.width = Math.max(completedCrop.width, finalWidth);
+    canvas.height = Math.max(completedCrop.height, finalHeight);
+
+    ctx.imageSmoothingQuality = "high";
     ctx.drawImage(
       image,
       completedCrop.x * scaleX,
       completedCrop.y * scaleY,
-      completedCrop.width * scaleX,
-      completedCrop.height * scaleY,
+      cropNativeWidth,
+      cropNativeHeight,
       0,
       0,
-      completedCrop.width,
-      completedCrop.height
+      canvas.width,
+      canvas.height
     );
 
-    const croppedImageUrl = canvas.toDataURL("image/jpeg", 0.9);
+    const croppedImageUrl = canvas.toDataURL("image/jpeg", 0.85);
     onCropComplete(croppedImageUrl);
     onOpenChange(false);
   }, [completedCrop, onCropComplete, onOpenChange]);

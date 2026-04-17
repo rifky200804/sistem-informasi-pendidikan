@@ -1,183 +1,267 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, Calendar, Eye, Edit } from "lucide-react";
+import { Plus, Download, Calendar, Eye, Edit, Trash2 } from "lucide-react";
 import { DataTable, Column } from "@/components/base/DataTable";
 import { Badge } from "@/components/ui/badge";
 import { StudentReportDialog } from "@/components/dialogs/StudentReportDialog";
 import { CreateReportDialog } from "@/components/dialogs/CreateReportDialog";
-import { Section, Question } from "@/types/reportTemplate";
-
-interface ProgressReport {
-  id: string;
-  student: string;
-  year: string;
-  status: string;
-  completedDate: string;
-  teacher: string;
-  reportData?: Record<string, any>;
-}
-
-// Mock template sections (matches new API structure)
-const mockTemplateSections: Section[] = [
-  {
-    id: '1',
-    Section: '.1 Nilai Mata Pelajaran',
-    type: 'table_text',
-    Questions: [
-      { Question: 'Matematika', answer: '', answers: [], photo: '', Ket: '' },
-      { Question: 'Bahasa Indonesia', answer: '', answers: [], photo: '', Ket: '' },
-      { Question: 'Seni', answer: '', answers: [], photo: '', Ket: '' },
-    ]
-  },
-  {
-    id: '2',
-    Section: '1. Penilaian Perkembangan',
-    type: 'table',
-    Questions: [
-      { 
-        Question: 'Siswa dapat mengenal angka 1-10', 
-        answer: '', 
-        answers: ['Belum Berkembang', 'Mulai Berkembang', 'Berkembang Sesuai Harapan', 'Berkembang Sangat Baik'],
-        photo: '',
-        Ket: ''
-      },
-      { 
-        Question: 'Siswa dapat mengenal huruf A-Z', 
-        answer: '', 
-        answers: ['Belum Berkembang', 'Mulai Berkembang', 'Berkembang Sesuai Harapan', 'Berkembang Sangat Baik'],
-        photo: '',
-        Ket: ''
-      },
-      { 
-        Question: 'Siswa dapat berinteraksi dengan teman', 
-        answer: '', 
-        answers: ['Belum Berkembang', 'Mulai Berkembang', 'Berkembang Sesuai Harapan', 'Berkembang Sangat Baik'],
-        photo: '',
-        Ket: ''
-      },
-    ]
-  },
-  {
-    id: '3',
-    Section: '3. Catatan Perkembangan',
-    type: 'text',
-    Questions: [
-      { Question: 'Catatan Guru', answer: '', answers: [], photo: '', Ket: '' }
-    ]
-  }
-];
-
-// Mock students
-const mockStudents = [
-  { id: 'STD-001', name: 'Aisyah Putri' },
-  { id: 'STD-002', name: 'Muhammad Rizki' },
-  { id: 'STD-003', name: 'Zahra Amelia' },
-  { id: 'STD-004', name: 'Farhan Hakim' },
-  { id: 'STD-005', name: 'Salsabila Azzahra' },
-];
-
-const mockReports: ProgressReport[] = [
-  { 
-    id: 'RPT-001', 
-    student: 'Aisyah Putri', 
-    year: '2023/2024', 
-    status: 'completed', 
-    completedDate: '2024-01-15', 
-    teacher: 'Siti Aminah',
-    reportData: {
-      '1': { rows: [
-        { Question: 'Matematika', answer: '85', Ket: 'Baik' },
-        { Question: 'Bahasa Indonesia', answer: '90', Ket: 'Sangat Baik' },
-        { Question: 'Seni', answer: '88', Ket: 'Baik' },
-      ]},
-      '2': { rows: [
-        { Question: 'Siswa dapat mengenal angka 1-10', answer: 'Berkembang Sangat Baik', answers: ['Belum Berkembang', 'Mulai Berkembang', 'Berkembang Sesuai Harapan', 'Berkembang Sangat Baik'], Ket: 'Mampu dengan baik' },
-        { Question: 'Siswa dapat mengenal huruf A-Z', answer: 'Berkembang Sesuai Harapan', answers: ['Belum Berkembang', 'Mulai Berkembang', 'Berkembang Sesuai Harapan', 'Berkembang Sangat Baik'], Ket: 'Cukup baik' },
-        { Question: 'Siswa dapat berinteraksi dengan teman', answer: 'Berkembang Sangat Baik', answers: ['Belum Berkembang', 'Mulai Berkembang', 'Berkembang Sesuai Harapan', 'Berkembang Sangat Baik'], Ket: 'Sangat aktif' },
-      ]},
-      '3': { text: 'Aisyah menunjukkan perkembangan yang sangat baik dalam berbagai aspek pembelajaran.', photo: null }
-    }
-  },
-  { id: 'RPT-002', student: 'Muhammad Rizki', year: '2023/2024', status: 'completed', completedDate: '2024-01-15', teacher: 'Budi Santoso' },
-  { id: 'RPT-003', student: 'Zahra Amelia', year: '2023/2024', status: 'draft', completedDate: '-', teacher: 'Dewi Lestari' },
-  { id: 'RPT-004', student: 'Farhan Hakim', year: '2023/2024', status: 'completed', completedDate: '2024-01-16', teacher: 'Ahmad Fauzi' },
-  { id: 'RPT-005', student: 'Salsabila Azzahra', year: '2023/2024', status: 'draft', completedDate: '-', teacher: 'Rina Kartika' },
-];
+import { DeleteConfirmDialog } from "@/components/dialogs/DeleteConfirmDialog";
+import { progressReportService, ProgressReportListItem, CreateProgressReportData } from "@/services/progressReportService";
+import { reportTemplateService } from "@/services/reportTemplateService";
+import { Section } from "@/types/reportTemplate";
+import { toast } from "sonner";
 
 const ProgressReports = () => {
-  const [reports, setReports] = useState(mockReports);
+  const [reports, setReports] = useState<ProgressReportListItem[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [selectedReport, setSelectedReport] = useState<ProgressReport | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  // Dialog state
+  const [reportToDelete, setReportToDelete] = useState<ProgressReportListItem | null>(null);
+  const [selectedReportRow, setSelectedReportRow] = useState<ProgressReportListItem | null>(null);
+  const [activeTemplateSections, setActiveTemplateSections] = useState<Section[]>([]);
+  const [reportDialogData, setReportDialogData] = useState<Record<string, any>>({});
+  const [templateName, setTemplateName] = useState("");
+  const [studentName, setStudentName] = useState("");
   const [isReadOnly, setIsReadOnly] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleView = (report: ProgressReport) => {
-    setSelectedReport(report);
-    setIsReadOnly(true);
-    setIsDialogOpen(true);
-  };
+  useEffect(() => {
+    fetchReports();
+  }, []);
 
-  const handleEdit = (report: ProgressReport) => {
-    setSelectedReport(report);
-    setIsReadOnly(false);
-    setIsDialogOpen(true);
-  };
-
-  const handleSave = (data: Record<string, any>) => {
-    if (selectedReport) {
-      setReports(reports.map(r => 
-        r.id === selectedReport.id 
-          ? { ...r, reportData: data, status: 'draft' }
-          : r
-      ));
+  const fetchReports = async () => {
+    setIsLoading(true);
+    try {
+      const data = await progressReportService.getAll();
+      if (Array.isArray(data)) {
+        setReports(data);
+      }
+    } catch (error) {
+      console.error("Error fetching reports:", error);
+      toast.error("Gagal mengambil data rapor");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleCreateReport = (studentId: string, studentName: string, year: string) => {
-    const newReport: ProgressReport = {
-      id: `RPT-${String(reports.length + 1).padStart(3, '0')}`,
-      student: studentName,
-      year,
-      status: 'draft',
-      completedDate: '-',
-      teacher: 'Siti Aminah', // Default teacher, should be from auth
-    };
-    setReports([...reports, newReport]);
-    setIsCreateDialogOpen(false);
-    
-    // Open the new report for editing
-    setSelectedReport(newReport);
-    setIsReadOnly(false);
-    setIsDialogOpen(true);
+
+  const handleDeleteClick = (report: ProgressReportListItem) => {
+    setReportToDelete(report);
+    setDeleteDialogOpen(true);
   };
 
-  const columns: Column<ProgressReport>[] = [
-    { key: 'id', header: 'ID Rapor' },
-    { key: 'student', header: 'Nama Murid' },
-    { key: 'year', header: 'Tahun Ajaran' },
-    { key: 'teacher', header: 'Guru Wali' },
+  const handleDeleteConfirm = async () => {
+    if (!reportToDelete) return;
+    try {
+      setIsLoading(true);
+      await progressReportService.delete(reportToDelete.id.toString());
+      toast.success("Rapor berhasil dihapus");
+      setDeleteDialogOpen(false);
+      setReportToDelete(null);
+      fetchReports();
+    } catch (error) {
+      console.error("Error deleting report:", error);
+      toast.error("Gagal menghapus rapor");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const parseBackendToFormData = (backendData: any[]) => {
+    const parsedData: Record<string, any> = {};
+    backendData?.forEach((backendSection) => {
+      const sectionId = backendSection.Section;
+      if (backendSection.type === "table_text" || backendSection.type === "table") {
+        parsedData[sectionId] = {
+          rows: backendSection.Questions?.map((q: any) => ({
+            Question: q.Question,
+            answer: q.answer || "",
+            answers: q.answers || [],
+            Ket: q.Ket || "",
+            predikat: q.predikat || ""
+          })) || []
+        };
+      } else if (backendSection.type === "text" || backendSection.type === "FREE_TEXT") {
+        const firstQuestion = backendSection.Questions?.[0];
+        let photosArray: string[] = [];
+        if (firstQuestion) {
+          if (Array.isArray(firstQuestion.photos)) {
+            photosArray = firstQuestion.photos;
+          } else if (firstQuestion.photo) {
+            photosArray = [firstQuestion.photo];
+          } else {
+            // Fallback for older data format where photos were mapped to multiple questions
+            photosArray = backendSection.Questions?.map((q: any) => q.photo).filter(Boolean) || [];
+          }
+        }
+
+        parsedData[sectionId] = {
+          text: firstQuestion?.Ket || firstQuestion?.answer || "",
+          photos: photosArray
+        };
+      }
+    });
+    return parsedData;
+  };
+
+  const handleOpenDialogWithReport = async (report: ProgressReportListItem, readOnly: boolean) => {
+    try {
+      setIsLoading(true);
+      const detail = await progressReportService.getById(report.id.toString());
+      if (!detail) {
+        toast.error("Gagal memuat detail laporan");
+        return;
+      }
+
+      const templates = await reportTemplateService.getAll();
+      const activeTemplateData = templates[0]?.data || [];
+      detail.data.forEach((sec: any) => {
+        const tSec = activeTemplateData.find((t: any) => t.Section === sec.Section);
+        if (tSec && (tSec.Headers || tSec.headers)) {
+          sec.Headers = tSec.Headers || tSec.headers;
+        }
+      });
+
+      // the sections shape matches detail.data, now fortified with headers!
+      setTemplateName(detail.title || "Template Rapor");
+      setStudentName(report.student.name);
+      setActiveTemplateSections(detail.data as Section[]);
+      setReportDialogData(parseBackendToFormData(detail.data));
+      setSelectedReportRow(report);
+      setIsReadOnly(readOnly);
+      setIsDialogOpen(true);
+    } catch (err) {
+      console.error("Error opening report:", err);
+      toast.error("Terjadi kesalahan sistem");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateNewReport = async (studentId: string, _studentName: string, year: string, semester: string) => {
+    try {
+      setIsLoading(true);
+      // Fetch active template so we can show it!
+      const activeTemplate = await reportTemplateService.getActive();
+      if (!activeTemplate || !activeTemplate.data || activeTemplate.data.length === 0) {
+        toast.error("Template rapor aktif belum diatur atau kosong!");
+        return;
+      }
+
+      // Setup active template context
+      setActiveTemplateSections(activeTemplate.data as Section[]);
+      setTemplateName(activeTemplate.title);
+      setStudentName(_studentName);
+
+      // We MUST initialize the dialog data using parseBackendToFormData so the template questions appear as rows!
+      setReportDialogData(parseBackendToFormData(activeTemplate.data));
+
+      setSelectedReportRow({
+        id: 0,
+        studentId: Number(studentId),
+        templateId: activeTemplate.id ? Number(activeTemplate.id) : undefined, // Include the correctly mapped templateId
+        year: Number(year.split('/')[0]), // Convert "2023/2024" to 2023, maybe? Or keep year number
+        tahun_ajaran: year,
+        semester: semester,
+        student: { name: _studentName } as any,
+      } as any);
+
+      setIsCreateDialogOpen(false);
+      setIsReadOnly(false);
+      setIsDialogOpen(true);
+    } catch (err) {
+      console.error(err);
+      toast.error("Terjadi kesalahan");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSave = async (formData: Record<string, any>) => {
+    if (!selectedReportRow) return;
+    try {
+      setIsLoading(true);
+
+      const payloadData = activeTemplateSections.map((section) => {
+        const sectionId = section.id || section.Section;
+        const formDataSection = formData[sectionId];
+        let newQuestions: any[] = [];
+
+        if (section.type === "table_text" || section.type === "table") {
+          newQuestions = (formDataSection?.rows || []).map((row: any) => ({
+            Question: row.Question,
+            answer: row.answer ? String(row.answer) : "",
+            Ket: row.Ket || "",
+            predikat: row.predikat || "",
+            answers: row.answers || []
+          }));
+        } else if (section.type === "text" || section.type === "FREE_TEXT") {
+          const photos = formDataSection?.photos || [];
+          newQuestions = [{
+            Question: section.Questions?.[0]?.Question || "Catatan",
+            Ket: formDataSection?.text || "",
+            photos: photos,
+            answers: section.Questions?.[0]?.answers || []
+          }];
+        }
+
+        return {
+          Section: section.Section,
+          Questions: newQuestions
+        };
+      });
+
+      const reqBody: CreateProgressReportData = {
+        studentId: selectedReportRow.studentId,
+        templateId: selectedReportRow.templateId,
+        year: selectedReportRow.year || new Date().getFullYear(),
+        tahun_ajaran: selectedReportRow.tahun_ajaran,
+        semester: selectedReportRow.semester || "ganjil",
+        data: payloadData
+      };
+
+      if (selectedReportRow.id && selectedReportRow.id !== 0) {
+        await progressReportService.update(selectedReportRow.id.toString(), reqBody);
+      } else {
+        await progressReportService.create(reqBody);
+      }
+
+      toast.success("Rapor berhasil disimpan!");
+      setIsDialogOpen(false);
+      fetchReports();
+    } catch (err) {
+      console.error(err);
+      toast.error("Gagal menyimpan rapor");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const columns: Column<ProgressReportListItem>[] = [
+    { key: 'id', header: 'ID Rapor', render: (item) => `RPT-${String(item.id).padStart(3, '0')}` },
+    { key: 'student', header: 'Nama Murid', render: (item) => item.student?.name || '-' },
+    { key: 'tahun_ajaran', header: 'Tahun Ajaran', render: (item) => item.tahun_ajaran || item.student?.tahunAjaran || item.year },
+    { key: 'createdBy', header: 'Guru Wali', render: (item) => item.createdBy?.name || '-' },
+    // {
+    //   key: 'status',
+    //   header: 'Status',
+    //   render: (item) => {
+    //     const isCompleted = (item._count?.answers || 0) > 0;
+    //     return (
+    //       <Badge variant={isCompleted ? 'default' : 'secondary'}>
+    //         {isCompleted ? 'Selesai' : 'Draft'}
+    //       </Badge>
+    //     );
+    //   },
+    // },
     {
-      key: 'status',
-      header: 'Status',
+      key: 'semester',
+      header: 'Keterangan Semester',
       render: (item) => (
-        <Badge variant={item.status === 'completed' ? 'default' : 'secondary'}>
-          {item.status === 'completed' ? 'Selesai' : 'Draft'}
-        </Badge>
-      ),
-    },
-    {
-      key: 'completedDate',
-      header: 'Tanggal Selesai',
-      render: (item) => (
-        item.completedDate !== '-' ? (
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm">{new Date(item.completedDate).toLocaleDateString('id-ID')}</span>
-          </div>
-        ) : (
-          <span className="text-sm text-muted-foreground">-</span>
-        )
+        <span className="text-sm capitalize">{item.semester}</span>
       ),
     },
     {
@@ -185,14 +269,175 @@ const ProgressReports = () => {
       header: 'Aksi',
       render: (item) => (
         <div className="flex gap-1">
-          <Button variant="ghost" size="sm" onClick={() => handleView(item)}>
+          <Button variant="ghost" size="sm" onClick={() => handleOpenDialogWithReport(item, true)}>
             <Eye className="w-4 h-4" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => handleEdit(item)}>
+          <Button variant="ghost" size="sm" onClick={() => handleOpenDialogWithReport(item, false)}>
             <Edit className="w-4 h-4" />
           </Button>
-          {item.status === 'completed' && (
-            <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(item)}>
+            <Trash2 className="w-4 h-4 text-destructive" />
+          </Button>
+          {((item._count?.answers || 0) > 0) && (
+            <Button variant="ghost" size="sm" onClick={async () => {
+              try {
+                toast.info("Sedang memuat data rapor untuk PDF...");
+                const detail = await progressReportService.getById(item.id.toString());
+                if (!detail) {
+                  toast.error("Gagal mendapatkan detail rapor.");
+                  return;
+                }
+                const templates = await reportTemplateService.getAll();
+                const activeData = templates[0]?.data || [];
+
+                const printWindow = window.open('', '', 'height=800,width=800');
+                if (!printWindow) {
+                  toast.error("Pop-up diblokir. Harap izinkan pop-up untuk mencetak PDF.");
+                  return;
+                }
+
+                const VITE_API_URL = import.meta.env.VITE_API_URL || "http://192.168.1.184:3000/api";
+                const getImageUrl = (path: string) => path && !path.startsWith('data:') && !path.startsWith('http') ? `${VITE_API_URL}/reports/images/${path}` : path;
+
+                let htmlContent = `
+                <html>
+                  <head>
+                    <title>Rapor_${item.student?.name || 'Siswa'}</title>
+                    <style>
+                      @page { size: A4; margin: 0; }
+                      body { font-family: Arial, sans-serif; margin: 0; padding: 0; color: #000; box-sizing: border-box; }
+                      .header { text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 20px; border-bottom: 2px solid black; padding-bottom: 10px; }
+                      .sub-header { text-align: center; font-size: 14px; margin-bottom: 40px; }
+                      .info-table { width: 100%; margin-bottom: 30px; font-size: 14px; }
+                      .info-table td { padding: 4px; }
+                      .section-title { font-weight: bold; font-size: 16px; margin-top: 30px; margin-bottom: 10px; background-color: #f3f4f6; padding: 8px; border-left: 4px solid #3b82f6; page-break-after: avoid; break-after: avoid; }
+                      table.data-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; page-break-inside: auto; }
+                      table.data-table tr { page-break-inside: avoid; page-break-after: auto; }
+                      table.data-table thead { display: table-header-group; }
+                      table.data-table th, table.data-table td { border: 1px solid #000; padding: 8px; }
+                      table.data-table th { background-color: #f3f4f6; text-align: center; }
+                      .text-catatan { border: 1px solid #000; padding: 15px; margin-bottom: 15px; min-height: 100px; font-size: 14px; white-space: pre-wrap; page-break-inside: avoid; break-inside: avoid; }
+                      .text-section-container { border: 2px solid #94a3b8; border-radius: 12px; position: relative; padding: 25px 20px 20px; margin-top: 30px; margin-bottom: 20px; page-break-inside: avoid; break-inside: avoid; }
+                      .text-section-badge { position: absolute; top: -14px; left: 30px; background-color: #64748b; color: white; padding: 4px 20px; border-radius: 20px; font-weight: bold; font-size: 13px; text-transform: uppercase; }
+                      .text-content-wrap { font-size: 14px; white-space: pre-wrap; line-height: 1.6; margin-bottom: 15px; }
+                      .photo-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin-top: 15px; }
+                      .photo-item { width: 45%; max-width: 300px; padding: 5px; text-align: center; page-break-inside: avoid; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; }
+                      .photo-item img { max-width: 100%; max-height: 250px; object-fit: contain; border-radius: 4px; }
+                    </style>
+                  </head>
+                  <body>
+                    <table style="width: 100%; border: none; margin: 0; padding: 0;">
+                      <thead><tr><td style="height: 20mm; border: none; padding: 0;"></td></tr></thead>
+                      <tbody><tr><td style="padding: 0 20mm;">
+                        <div class="header">${detail.title.toUpperCase()}</div>
+                    <div class="sub-header">TAHUN AJARAN ${item.tahun_ajaran || item.year} - SEMESTER ${item.semester.toUpperCase()}</div>
+                    
+                    <table class="info-table">
+                      <tr>
+                        <td width="100"><strong>Nama Siswa</strong></td><td width="10">:</td><td>${item.student?.name || '-'}</td>
+                        <td width="100"><strong>Guru Wali</strong></td><td width="10">:</td><td>${item.createdBy?.name || '-'}</td>
+                      </tr>
+                      <tr>
+                        <td><strong>NISN</strong></td><td>:</td><td>${item.student?.nisn || '-'}</td>
+                        <td><strong>Kelas</strong></td><td>:</td><td>${item.student?.className || '-'}</td>
+                      </tr>
+                    </table>
+                `;
+
+                detail.data.forEach((sec) => {
+                  if (sec.type === 'table' || sec.type === 'table_text') {
+                    htmlContent += `<div class="section-title">${sec.Section}</div>`;
+                    let headers = ["No", "Pernyataan", "Nilai", "Predikat", "Keterangan"];
+                    const tSec = activeData.find((t: any) => t.Section === sec.Section);
+                    if (tSec) {
+                      let customHeaders = tSec.Headers?.length ? tSec.Headers : tSec.headers?.length ? tSec.headers : [];
+                      if (customHeaders.length > 0) {
+                        headers = customHeaders[0].toLowerCase() !== "no" ? ["No", ...customHeaders] : customHeaders;
+                      }
+                    }
+
+                    htmlContent += `<table class="data-table"><thead><tr>`;
+                    headers.forEach(h => htmlContent += `<th>${h}</th>`);
+                    htmlContent += `</tr></thead><tbody>`;
+
+                    sec.Questions.forEach((q, qIdx) => {
+                      // ROW 1: Number and Question spanning across the rest of the columns
+                      htmlContent += `<tr style="background-color: #f1f5f9; font-weight: bold;">
+                         <td style="text-align: center; width: 40px; border-bottom: none;">${qIdx + 1}</td>
+                         <td colspan="${Math.max(1, headers.length - 1)}" style="border-bottom: none;">${q.Question || ''}</td>
+                       </tr>`;
+
+                      // ROW 2: Answers aligning with their respective headers
+                      htmlContent += `<tr>
+                         <td style="border-top: none;"></td>
+                         <td style="border-top: none;"></td>`; // Empty column 2 below Question
+
+                      if (headers.length >= 4) {
+                        htmlContent += `<td style="text-align: center; border-top: none; font-weight: bold; vertical-align: middle;">${q.answer || ''}</td>`;
+                      }
+                      if (headers.length >= 5) {
+                        htmlContent += `<td style="text-align: center; border-top: none; font-weight: bold; vertical-align: middle;">${q.predikat || ''}</td>`;
+                      }
+                      if (headers.length > 5) {
+                        for (let i = 0; i < headers.length - 5; i++) {
+                          htmlContent += `<td style="text-align: center; border-top: none;">-</td>`;
+                        }
+                      }
+                      if (headers.length >= 3) {
+                        htmlContent += `<td style="border-top: none; vertical-align: top;">${q.Ket || ''}</td>`;
+                      }
+                      htmlContent += `</tr>`;
+                    });
+                    htmlContent += `</tbody></table>`;
+                  } else if (sec.type === 'text') {
+                    const q = sec.Questions?.[0];
+                    if (q) {
+                      htmlContent += `<div class="text-section-container">`;
+                      htmlContent += `<div class="text-section-badge">${sec.Section}</div>`;
+
+                      if (q.Question && q.Question !== 'Catatan') {
+                        htmlContent += `<div style="text-align: center; font-weight: bold; margin-bottom: 15px;">${q.Question}</div>`;
+                      }
+                      if (q.Ket && q.Ket.trim() !== '') {
+                        htmlContent += `<div class="text-content-wrap">${q.Ket}</div>`;
+                      }
+
+                      let photos: any[] = [];
+                      if (Array.isArray(q.photos)) photos = q.photos;
+                      else if (q.photo) photos = [q.photo];
+
+                      if (photos.length > 0) {
+                        htmlContent += `<div class="photo-grid">`;
+                        photos.forEach(pf => {
+                          if (pf && typeof pf === 'string') {
+                            htmlContent += `<div class="photo-item"><img src="${getImageUrl(pf)}" alt="Dokumentasi" /></div>`;
+                          }
+                        });
+                        htmlContent += `</div>`;
+                      }
+                      htmlContent += `</div>`;
+                    }
+                  }
+                });
+
+                htmlContent += `
+                      </td></tr></tbody>
+                      <tfoot><tr><td style="height: 20mm; border: none; padding: 0;"></td></tr></tfoot>
+                    </table>
+                  </body>
+                  <script>
+                    setTimeout(() => { window.print(); window.close(); }, 800);
+                  </script>
+                </html>`;
+
+                printWindow.document.write(htmlContent);
+                printWindow.document.close();
+
+              } catch (e) {
+                toast.error("Gagal memproses PDF rapor. Pastikan server terhubung.");
+                console.error(e);
+              }
+            }}>
               <Download className="w-4 h-4" />
             </Button>
           )}
@@ -208,7 +453,7 @@ const ProgressReports = () => {
           <h1 className="text-3xl font-bold text-foreground">Rapor Perkembangan</h1>
           <p className="text-muted-foreground">Kelola rapor dan penilaian perkembangan murid</p>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
+        <Button onClick={() => setIsCreateDialogOpen(true)} disabled={isLoading}>
           <Plus className="w-4 h-4 mr-2" />
           Buat Rapor
         </Button>
@@ -222,22 +467,35 @@ const ProgressReports = () => {
         <DataTable data={reports} columns={columns} />
       </Card>
 
-      <StudentReportDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        studentName={selectedReport?.student || ""}
-        templateName="Template Rapor PAUD"
-        sections={mockTemplateSections}
-        reportData={selectedReport?.reportData}
-        onSave={handleSave}
-        readOnly={isReadOnly}
-      />
+      {isDialogOpen && (
+        <StudentReportDialog
+          open={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          studentName={studentName}
+          templateName={templateName}
+          sections={activeTemplateSections}
+          reportData={reportDialogData}
+          report={selectedReportRow}
+          onSave={handleSave}
+          readOnly={isReadOnly}
+          isNew={selectedReportRow?.id === 0}
+        />
+      )}
 
-      <CreateReportDialog
-        open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
-        students={mockStudents}
-        onSubmit={handleCreateReport}
+      {isCreateDialogOpen && (
+        <CreateReportDialog
+          open={isCreateDialogOpen}
+          onOpenChange={setIsCreateDialogOpen}
+          onSubmit={handleCreateNewReport}
+        />
+      )}
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+        title="Hapus Rapor"
+        description={`Apakah Anda yakin ingin menghapus rapor ${reportToDelete?.student?.name || 'ini'}?`}
       />
     </div>
   );

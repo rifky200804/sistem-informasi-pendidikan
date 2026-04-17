@@ -17,6 +17,7 @@ interface SectionFormProps {
 export const SectionForm = ({ open, onOpenChange, onSubmit, initialData }: SectionFormProps) => {
   const [sectionName, setSectionName] = useState("");
   const [type, setType] = useState<SectionType>('table_text');
+  const [headers, setHeaders] = useState<string[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answerOptions, setAnswerOptions] = useState<string[]>(['Belum Berkembang', 'Mulai Berkembang', 'Berkembang Sesuai Harapan', 'Berkembang Sangat Baik']);
 
@@ -24,6 +25,7 @@ export const SectionForm = ({ open, onOpenChange, onSubmit, initialData }: Secti
     if (initialData) {
       setSectionName(initialData.Section);
       setType(initialData.type);
+      setHeaders(initialData.headers || initialData.Headers || []);
       setQuestions(initialData.Questions || []);
       // Extract answer options from first question if type is 'table'
       if (initialData.type === 'table' && initialData.Questions?.[0]?.answers?.length) {
@@ -32,21 +34,32 @@ export const SectionForm = ({ open, onOpenChange, onSubmit, initialData }: Secti
     } else {
       setSectionName("");
       setType('table_text');
+      setHeaders([]);
       setQuestions([]);
       setAnswerOptions(['Belum Berkembang', 'Mulai Berkembang', 'Berkembang Sesuai Harapan', 'Berkembang Sangat Baik']);
     }
   }, [initialData, open]);
 
   const handleSubmit = () => {
-    // For 'table' type, apply the same answer options to all questions
-    const finalQuestions = type === 'table' 
+    let finalQuestions = type === 'table' 
       ? questions.map(q => ({ ...q, answers: answerOptions }))
       : questions;
+
+    if (type === 'text' && finalQuestions.length === 0) {
+      finalQuestions = [{
+        Question: 'Catatan',
+        answer: '',
+        answers: [],
+        photo: '',
+        Ket: ''
+      }];
+    }
 
     onSubmit({
       id: initialData?.id || '',
       Section: sectionName,
       type,
+      headers: headers.filter(h => h.trim() !== ''),
       Questions: finalQuestions
     });
   };
@@ -87,6 +100,63 @@ export const SectionForm = ({ open, onOpenChange, onSubmit, initialData }: Secti
       setAnswerOptions(answerOptions.filter((_, i) => i !== index));
     }
   };
+
+  const addHeader = () => {
+    if (headers.length < 4) {
+      setHeaders([...headers, '']);
+    }
+  };
+
+  const updateHeader = (index: number, value: string) => {
+    const newHeaders = [...headers];
+    newHeaders[index] = value;
+    setHeaders(newHeaders);
+  };
+
+  const removeHeader = (index: number) => {
+    setHeaders(headers.filter((_, i) => i !== index));
+  };
+
+  const renderHeadersEditor = () => (
+    <div className="space-y-4 mb-6 border-b pb-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <Label>Kustomisasi Kolom (Headers)</Label>
+          <p className="text-xs text-muted-foreground mt-1">Kosongkan jika ingin menggunakan kolom default. Kolom "No" akan dibuat otomatis secara default pada frontend.</p>
+        </div>
+        <Button type="button" variant="outline" size="sm" onClick={addHeader} disabled={headers.length >= 4}>
+          <Plus className="w-4 h-4 mr-1" />
+          Tambah Kolom {headers.length >= 4 && '(Maks 5)'}
+        </Button>
+      </div>
+      {(type === 'table_text' || type === 'table') && (
+        <div className="flex flex-wrap gap-2">
+          {headers.map((hdr, index) => (
+            <div key={index} className="flex items-center gap-1">
+              <Input
+                value={hdr}
+                onChange={(e) => updateHeader(index, e.target.value)}
+                className="w-40"
+                placeholder="Nama Kolom"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => removeHeader(index)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          ))}
+          {headers.length === 0 && (
+            <div className="text-sm text-muted-foreground italic">Menggunakan header default</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 
   const renderTableTextEditor = () => (
     <div className="space-y-4">
@@ -201,41 +271,16 @@ export const SectionForm = ({ open, onOpenChange, onSubmit, initialData }: Secti
 
   const renderTextEditor = () => (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <Label>Daftar Field Teks</Label>
-        <Button type="button" variant="outline" size="sm" onClick={addQuestion}>
-          <Plus className="w-4 h-4 mr-1" />
-          Tambah
-        </Button>
+      <div className="p-4 bg-muted/50 rounded-lg border border-border">
+        <p className="text-sm text-foreground font-medium mb-2">Informasi Section</p>
+        <p className="text-sm text-muted-foreground mb-4">
+          Tipe section <strong>"Teks & Gambar"</strong> difungsikan sebagai area input dinamis. Anda tidak perlu menambahkan field apapun di sini.
+        </p>
+        <ul className="text-xs text-muted-foreground space-y-1 ml-4 list-disc">
+          <li>Pengguna akan mendapatkan satu kotak teks catatan besar.</li>
+          <li>Pengguna dapat mengunggah hingga maksimal 4 baris foto pendukung yang akan ditampilkan di bawah teks.</li>
+        </ul>
       </div>
-      <div className="space-y-2 max-h-60 overflow-y-auto">
-        {questions.map((q, index) => (
-          <div key={index} className="flex gap-2 items-center">
-            <Input
-              placeholder="Nama Field (contoh: Catatan)"
-              value={q.Question}
-              onChange={(e) => updateQuestion(index, e.target.value)}
-              className="flex-1"
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => removeQuestion(index)}
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-        ))}
-        {questions.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            Belum ada data. Klik "Tambah" untuk menambahkan field.
-          </p>
-        )}
-      </div>
-      <p className="text-xs text-muted-foreground">
-        * Upload gambar akan dilakukan saat mengisi rapor
-      </p>
     </div>
   );
 
@@ -270,14 +315,15 @@ export const SectionForm = ({ open, onOpenChange, onSubmit, initialData }: Secti
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="table_text">Tabel Nilai (Input Teks)</SelectItem>
-                <SelectItem value="table">Tabel Predikat (Multiple Choice)</SelectItem>
+                <SelectItem value="table">Tabel Predikat (Select Option)</SelectItem>
                 <SelectItem value="text">Teks & Gambar</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="border-t pt-4">
-            <Label className="mb-4 block">Konten Section</Label>
+            <Label className="mb-4 block text-lg font-semibold">Konten Section</Label>
+            {(type === 'table_text' || type === 'table') && renderHeadersEditor()}
             {type === 'table_text' && renderTableTextEditor()}
             {type === 'table' && renderTableEditor()}
             {type === 'text' && renderTextEditor()}
