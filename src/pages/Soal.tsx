@@ -6,10 +6,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, Eye, Image as ImageIcon, Upload, FileText, ChevronLeft, Save, Pencil, Download, Search, ChevronRight, X } from "lucide-react";
+import { Plus, Trash2, Eye, Image as ImageIcon, Upload, FileText, ChevronLeft, Save, Pencil, Download, Search, ChevronRight, X, Crop } from "lucide-react";
 import { toast } from "sonner";
 import { soalService, Subject, Question } from "@/services/soalService";
 import { getFileUrl } from "@/lib/fileUrl";
+import { ImageCropDialog } from "@/components/dialogs/ImageCropDialog";
 
 const Soal = () => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -39,6 +40,10 @@ const Soal = () => {
     imageUrl: null,
     imageSize: "medium"
   });
+
+  // Crop Dialog state
+  const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
+  const [cropImagePreview, setCropImagePreview] = useState<string>("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -183,10 +188,34 @@ const Soal = () => {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setCurrentQuestionData(prev => ({ 
-        ...prev, 
-        imageUrl: file 
-      }));
+      const previewUrl = URL.createObjectURL(file);
+      setCropImagePreview(previewUrl);
+      setIsCropDialogOpen(true);
+    }
+  };
+
+  const handleCropComplete = (croppedImageUrl: string) => {
+    // Convert the cropped image data URL to a File object
+    try {
+      fetch(croppedImageUrl)
+        .then(res => res.blob())
+        .then(blob => {
+          const file = new File([blob], "cropped-image.jpg", { type: "image/jpeg" });
+          setCurrentQuestionData(prev => ({ 
+            ...prev, 
+            imageUrl: file 
+          }));
+          setIsCropDialogOpen(false);
+          setCropImagePreview("");
+          toast.success("Gambar berhasil dipotong dan disimpan");
+        })
+        .catch(err => {
+          console.error("Error processing cropped image:", err);
+          toast.error("Gagal memproses gambar yang dipotong");
+        });
+    } catch (err) {
+      console.error("Error in handleCropComplete:", err);
+      toast.error("Gagal memproses gambar");
     }
   };
 
@@ -206,107 +235,7 @@ const Soal = () => {
     }
   };
 
-  const handleDownloadDocx = async (subject?: Subject) => {
-    let targetSubject = subject || editingSubject;
-    if (!targetSubject) return;
 
-    if (subject && (!subject.questions || subject.questions.length === 0)) {
-      try {
-        toast.info("Mengambil detail soal sebelum mendownload...");
-        targetSubject = await soalService.getById(subject.id);
-      } catch (e) {
-        toast.error("Gagal mengambil detail soal untuk di-download.");
-        return;
-      }
-    }
-
-    // Helper to escape HTML entities in text
-    const escapeHtml = (text: string) => {
-      return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\n/g, '<br/>');
-    };
-
-    // Build question rows using a table for each question
-    let questionsHtml = '';
-    (targetSubject.questions || []).forEach((q, idx) => {
-      let contentHtml = '';
-
-      if (q.imageUrl) {
-        let widthPx = '300';
-        if (q.imageSize === 'small') widthPx = '150';
-        else if (q.imageSize === 'large') widthPx = '450';
-        else if (q.imageSize === 'full') widthPx = '550';
-        contentHtml += `<p style="text-align:center;margin-bottom:6pt;"><img src="${getQuestionImageUrl(q.imageUrl)}" width="${widthPx}" style="max-width:100%;height:auto;" /></p>`;
-      }
-
-      if (q.text) {
-        contentHtml += `<p style="font-size:12pt;line-height:150%;text-align:justify;margin:0;">${escapeHtml(q.text)}</p>`;
-      }
-
-      questionsHtml += `
-        <table border="0" cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:18pt;">
-          <tr>
-            <td style="width:30pt;vertical-align:top;font-size:12pt;font-weight:bold;padding-top:2pt;">${idx + 1}.</td>
-            <td style="vertical-align:top;">${contentHtml}</td>
-          </tr>
-        </table>`;
-    });
-
-    const htmlContent = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-<head>
-<meta charset="utf-8">
-<title>Soal ${targetSubject.section}</title>
-<!--[if gte mso 9]>
-<xml>
-  <w:WordDocument>
-    <w:View>Print</w:View>
-    <w:Zoom>100</w:Zoom>
-    <w:DoNotOptimizeForBrowser/>
-  </w:WordDocument>
-</xml>
-<![endif]-->
-<style>
-  @page { size: A4; margin: 2cm 2cm 2cm 2cm; }
-  body { font-family: Arial, sans-serif; font-size: 12pt; color: #000; }
-  table { border-collapse: collapse; }
-  p { margin: 0; padding: 0; }
-</style>
-</head>
-<body>
-  <p style="text-align:center;font-size:16pt;font-weight:bold;margin-bottom:12pt;border-bottom:2pt solid black;padding-bottom:8pt;">
-    UJIAN: ${targetSubject.section.toUpperCase()}
-  </p>
-
-  <table border="0" cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:24pt;">
-    <tr style="line-height:200%;">
-      <td style="width:50pt;font-weight:bold;font-size:12pt;">Nama</td>
-      <td style="width:15pt;font-size:12pt;">:</td>
-      <td style="border-bottom:1pt dotted black;font-size:12pt;">&nbsp;</td>
-    </tr>
-    <tr style="line-height:200%;">
-      <td style="font-weight:bold;font-size:12pt;">Kelas</td>
-      <td style="font-size:12pt;">:</td>
-      <td style="border-bottom:1pt dotted black;font-size:12pt;">&nbsp;</td>
-    </tr>
-  </table>
-
-  ${questionsHtml}
-</body>
-</html>`;
-
-    const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Soal_${targetSubject.section}.doc`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
 
   const handleDownloadPdf = async (subject?: Subject) => {
     let targetSubject = subject || editingSubject;
@@ -408,11 +337,9 @@ const Soal = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <Button onClick={() => handleDownloadDocx()} variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50">
-                <Download className="w-4 h-4 mr-2" /> DOCX
-              </Button>
-              <Button onClick={() => handleDownloadPdf()} variant="outline" className="text-red-600 border-red-200 hover:bg-red-50">
-                <Download className="w-4 h-4 mr-2" /> PDF
+              <Button variant="outline" onClick={() => handleDownloadPdf()} className="flex items-center gap-1">
+                <Download className="w-4 h-4" />
+                Download PDF
               </Button>
               <Button onClick={() => setPreviewAllOpen(true)} variant="outline">
                 <Eye className="w-4 h-4 mr-2" />
@@ -544,22 +471,36 @@ const Soal = () => {
               </div>
 
               {currentQuestionData.imageUrl && (
-                <div className="space-y-2">
-                  <Label>Skala Ukuran Gambar Saat Dicetak Kertas</Label>
-                  <Select
-                    value={currentQuestionData.imageSize}
-                    onValueChange={(val: any) => setCurrentQuestionData(prev => ({ ...prev, imageSize: val }))}
+                <div className="space-y-3">
+                  <div>
+                    <Label>Skala Ukuran Gambar Saat Dicetak Kertas</Label>
+                    <Select
+                      value={currentQuestionData.imageSize}
+                      onValueChange={(val: any) => setCurrentQuestionData(prev => ({ ...prev, imageSize: val }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih skala ukuran..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="small">Area Kecil (Seperempat Halaman)</SelectItem>
+                        <SelectItem value="medium">Area Sedang (Setengah Halaman)</SelectItem>
+                        <SelectItem value="large">Area Besar (Tiga perempat Halaman)</SelectItem>
+                        <SelectItem value="full">Area Penuh (Penuh memanjang)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setCropImagePreview(getQuestionImageUrl(currentQuestionData.imageUrl));
+                      setIsCropDialogOpen(true);
+                    }}
+                    className="w-full gap-2"
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Pilih skala ukuran..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="small">Area Kecil (Seperempat Halaman)</SelectItem>
-                      <SelectItem value="medium">Area Sedang (Setengah Halaman)</SelectItem>
-                      <SelectItem value="large">Area Besar (Tiga perempat Halaman)</SelectItem>
-                      <SelectItem value="full">Area Penuh (Penuh memanjang)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <Crop className="w-4 h-4" />
+                    Edit / Crop Gambar
+                  </Button>
                 </div>
               )}
 
@@ -667,6 +608,14 @@ const Soal = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Image Crop Dialog */}
+        <ImageCropDialog
+          open={isCropDialogOpen}
+          onOpenChange={setIsCropDialogOpen}
+          imageSrc={cropImagePreview}
+          onCropComplete={handleCropComplete}
+        />
       </div>
     );
   }
@@ -715,11 +664,9 @@ const Soal = () => {
                 })(); }} title="Preview Soal" className="text-gray-600 hover:bg-gray-100 border-gray-200 h-8 px-2 text-xs">
                   <Eye className="w-3.5 h-3.5 mr-1" /> Preview
                 </Button>
-                <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleDownloadDocx(subject); }} title="Download DOCX" className="text-blue-600 hover:bg-blue-50 border-blue-200 h-8 px-2 text-xs">
-                  <Download className="w-3.5 h-3.5 mr-1" /> DOCX
-                </Button>
-                <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleDownloadPdf(subject); }} title="Download PDF" className="text-red-600 hover:bg-red-50 border-red-200 h-8 px-2 text-xs">
-                  <Download className="w-3.5 h-3.5 mr-1" /> PDF
+                <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleDownloadPdf(subject); }} title="Download Soal" className="h-8 px-2 text-xs">
+                  <Download className="w-3.5 h-3.5 mr-1" />
+                  Download PDF
                 </Button>
                 <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDeleteList(subject.id); }} title="Hapus Topik" className="h-8 w-8 p-0">
                   <Trash2 className="w-4 h-4 text-destructive" />

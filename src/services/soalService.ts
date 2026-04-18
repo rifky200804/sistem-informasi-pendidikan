@@ -1,4 +1,28 @@
 import { api } from './api';
+import { getFileUrl } from '@/lib/fileUrl';
+
+function dataURLtoFile(dataurl: string, filename: string): File | null {
+  const arr = dataurl.split(',');
+  if (arr.length < 2) return null;
+  const mimeMatch = arr[0].match(/:(.*?);/);
+  if (!mimeMatch) return null;
+  const mime = mimeMatch[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while(n--){
+      u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, {type:mime});
+}
+
+async function urlToFile(url: string, filename: string): Promise<File> {
+  const fullUrl = getFileUrl(url);
+  const res = await fetch(fullUrl);
+  if (!res.ok) throw new Error('Failed to fetch image');
+  const blob = await res.blob();
+  return new File([blob], filename, { type: blob.type || 'image/png' });
+}
 
 export interface Question {
   id: string | number;
@@ -37,18 +61,34 @@ export const soalService = {
     if (data.section) formData.append('section', data.section);
     
     if (data.questions) {
-      data.questions.forEach((q, index) => {
-        formData.append(`questions[${index}][text]`, q.text || '');
-        formData.append(`questions[${index}][imageSize]`, q.imageSize || 'medium');
+      for (let i = 0; i < data.questions.length; i++) {
+        const q = data.questions[i];
+        formData.append(`questions[${i}][text]`, q.text || '');
+        formData.append(`questions[${i}][imageSize]`, q.imageSize || 'medium');
+        
         if (q.imageUrl instanceof File) {
-          formData.append(`questions[${index}][imageUrl]`, q.imageUrl);
-        } else if (typeof q.imageUrl === 'string' && !q.imageUrl.startsWith('blob:') && !q.imageUrl.startsWith('data:')) {
-          formData.append(`questions[${index}][imageUrl]`, q.imageUrl);
+          formData.append(`questions[${i}][imageUrl]`, q.imageUrl);
+        } else if (typeof q.imageUrl === 'string') {
+          if (q.imageUrl.startsWith('data:')) {
+            const file = dataURLtoFile(q.imageUrl, `image_${i}.png`);
+            if (file) formData.append(`questions[${i}][imageUrl]`, file);
+          } else if (!q.imageUrl.startsWith('blob:')) {
+            try {
+              const file = await urlToFile(q.imageUrl, `image_${i}.png`);
+              formData.append(`questions[${i}][imageUrl]`, file);
+            } catch (e) {
+              console.error("Failed to convert URL to file", e);
+            }
+          }
         }
-      });
+      }
     }
 
-    const response = await api.post<ApiResponse<Subject>>('/questions/', formData);
+    const response = await api.post<ApiResponse<Subject>>('/questions/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data.data;
   },
 
@@ -58,19 +98,35 @@ export const soalService = {
     formData.append('section', data.section);
     
     if (data.questions) {
-      data.questions.forEach((q, index) => {
-        formData.append(`questions[${index}][id]`, String(q.id));
-        formData.append(`questions[${index}][text]`, q.text || '');
-        formData.append(`questions[${index}][imageSize]`, q.imageSize || 'medium');
+      for (let i = 0; i < data.questions.length; i++) {
+        const q = data.questions[i];
+        formData.append(`questions[${i}][id]`, String(q.id));
+        formData.append(`questions[${i}][text]`, q.text || '');
+        formData.append(`questions[${i}][imageSize]`, q.imageSize || 'medium');
+        
         if (q.imageUrl instanceof File) {
-          formData.append(`questions[${index}][imageUrl]`, q.imageUrl);
-        } else if (typeof q.imageUrl === 'string' && !q.imageUrl.startsWith('blob:') && !q.imageUrl.startsWith('data:')) {
-          formData.append(`questions[${index}][imageUrl]`, q.imageUrl);
+          formData.append(`questions[${i}][imageUrl]`, q.imageUrl);
+        } else if (typeof q.imageUrl === 'string') {
+          if (q.imageUrl.startsWith('data:')) {
+            const file = dataURLtoFile(q.imageUrl, `image_${i}.png`);
+            if (file) formData.append(`questions[${i}][imageUrl]`, file);
+          } else if (!q.imageUrl.startsWith('blob:')) {
+            try {
+              const file = await urlToFile(q.imageUrl, `image_${i}.png`);
+              formData.append(`questions[${i}][imageUrl]`, file);
+            } catch (e) {
+              console.error("Failed to convert URL to file", e);
+            }
+          }
         }
-      });
+      }
     }
 
-    const response = await api.put<ApiResponse<Subject>>(`/questions/sections/${id}`, formData);
+    const response = await api.put<ApiResponse<Subject>>(`/questions/sections/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data.data;
   },
 

@@ -59,77 +59,86 @@ export const ImageCropDialog = ({
   }, [aspectRatio]);
 
   const getCroppedImg = useCallback(() => {
-    if (!completedCrop || !imgRef.current) return;
-
-    const image = imgRef.current;
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-
-    if (!ctx) return;
-
-    const scaleX = image.naturalWidth / image.width;
-    const scaleY = image.naturalHeight / image.height;
-
-    // Hitung ukuran asli area pemotongan berdasarkan gambar natural
-    const cropNativeWidth = completedCrop.width * scaleX;
-    const cropNativeHeight = completedCrop.height * scaleY;
-
-    // Batasi maksimum resolusi ke 1200px agar payload ringan tapi teks tetap sangat fokus (terbaca)
-    const MAX_DIM = 1200;
-    let finalWidth = cropNativeWidth;
-    let finalHeight = cropNativeHeight;
-
-    if (Math.max(finalWidth, finalHeight) > MAX_DIM) {
-      if (finalWidth > finalHeight) {
-        finalHeight = Math.round(finalHeight * (MAX_DIM / finalWidth));
-        finalWidth = MAX_DIM;
-      } else {
-        finalWidth = Math.round(finalWidth * (MAX_DIM / finalHeight));
-        finalHeight = MAX_DIM;
-      }
+    if (!completedCrop || !imgRef.current) {
+      console.error("No crop data or image ref");
+      return;
     }
 
-    // Hindari upscale jika gambar aslinya kecil
-    canvas.width = Math.max(completedCrop.width, finalWidth);
-    canvas.height = Math.max(completedCrop.height, finalHeight);
+    try {
+      const image = imgRef.current;
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
 
-    ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(
-      image,
-      completedCrop.x * scaleX,
-      completedCrop.y * scaleY,
-      cropNativeWidth,
-      cropNativeHeight,
-      0,
-      0,
-      canvas.width,
-      canvas.height
-    );
+      if (!ctx) {
+        console.error("Could not get canvas context");
+        return;
+      }
 
-    const croppedImageUrl = canvas.toDataURL("image/jpeg", 0.85);
-    onCropComplete(croppedImageUrl);
-    onOpenChange(false);
+      const scaleX = image.naturalWidth / image.width;
+      const scaleY = image.naturalHeight / image.height;
+
+      const cropNativeWidth = completedCrop.width * scaleX;
+      const cropNativeHeight = completedCrop.height * scaleY;
+
+      const MAX_DIM = 1200;
+      let finalWidth = cropNativeWidth;
+      let finalHeight = cropNativeHeight;
+
+      if (Math.max(finalWidth, finalHeight) > MAX_DIM) {
+        if (finalWidth > finalHeight) {
+          finalHeight = Math.round(finalHeight * (MAX_DIM / finalWidth));
+          finalWidth = MAX_DIM;
+        } else {
+          finalWidth = Math.round(finalWidth * (MAX_DIM / finalHeight));
+          finalHeight = MAX_DIM;
+        }
+      }
+
+      canvas.width = Math.max(finalWidth, 100);
+      canvas.height = Math.max(finalHeight, 100);
+
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(
+        image,
+        completedCrop.x * scaleX,
+        completedCrop.y * scaleY,
+        cropNativeWidth,
+        cropNativeHeight,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+
+      const croppedImageUrl = canvas.toDataURL("image/jpeg", 0.85);
+      onCropComplete(croppedImageUrl);
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error during crop:", error);
+    }
   }, [completedCrop, onCropComplete, onOpenChange]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="w-[95vw] sm:max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Crop Gambar</DialogTitle>
         </DialogHeader>
-        <div className="flex justify-center py-4">
+        <div className="flex justify-center py-4 bg-slate-100 rounded-lg">
           <ReactCrop
             crop={crop}
             onChange={(c) => setCrop(c)}
             onComplete={(c) => setCompletedCrop(c)}
             aspect={aspectRatio}
+            minWidth={50}
+            minHeight={50}
           >
             <img
               ref={imgRef}
               src={imageSrc}
-              alt="Crop"
+              alt="Crop preview"
               onLoad={onImageLoad}
-              className="max-h-[400px]"
+              className="max-h-[400px] max-w-full"
             />
           </ReactCrop>
         </div>
@@ -137,7 +146,10 @@ export const ImageCropDialog = ({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Batal
           </Button>
-          <Button onClick={getCroppedImg}>
+          <Button 
+            onClick={getCroppedImg}
+            disabled={!completedCrop}
+          >
             Simpan
           </Button>
         </DialogFooter>

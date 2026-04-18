@@ -187,9 +187,11 @@ export const StudentReportDialog = ({
 
               return (
                 <div key={sectionId} className="mb-6">
-                    <div className="font-bold text-base mt-7 mb-3 bg-gray-100 p-2 border-l-4 border-blue-500">
+                  {(sec.type !== "text" || sec.Section !== "") && (
+                    <div className="font-bold text-base mt-7 mb-3 p-2">
                       {sec.Section}
                     </div>
+                  )}
 
                   {(sec.type === 'table' || sec.type === 'table_text') && (() => {
                     let headers = sec.Headers?.length ? sec.Headers : sec.headers?.length ? sec.headers : ["Pernyataan", "Nilai", "Predikat", "Keterangan"];
@@ -241,14 +243,8 @@ export const StudentReportDialog = ({
                   {sec.type === 'text' && (
                     <div className="relative border-2 border-slate-400 rounded-xl p-6 pt-8 mt-8 mb-4">
                       <div className="absolute -top-[14px] left-6 bg-slate-500 text-white px-5 py-0.5 rounded-[20px] font-bold text-[13px] uppercase shadow-sm">
-                        {sec.Section}
+                        {sec.Questions[0].Question}
                       </div>
-
-                      {sec.Questions?.[0]?.Question && sec.Questions[0].Question !== 'Catatan' && (
-                        <div className="text-center font-bold text-[13px] mb-4">
-                          {sec.Questions[0].Question}
-                        </div>
-                      )}
 
                       {sectionData?.text && sectionData.text.trim() !== '' && (
                         <div className="text-[14px] whitespace-pre-wrap leading-[1.6] mb-4">
@@ -279,7 +275,7 @@ export const StudentReportDialog = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {readOnly ? "Lihat" : (isNew ? "Buat" : "Edit")} Rapor - {studentName}
@@ -384,6 +380,11 @@ export const StudentReportDialog = ({
                     <div className="flex flex-col gap-4">
                       {/* Text Section - Top */}
                       <div className="w-full">
+                        {section.Questions?.[0]?.Question && section.Questions[0].Question !== 'Catatan' && (
+                          <div className="text-sm font-semibold mb-2">
+                            {section.Questions[0].Question}
+                          </div>
+                        )}
                         <Textarea
                           placeholder="Masukkan catatan (opsional)..."
                           value={formData[sectionId]?.text || ""}
@@ -451,12 +452,12 @@ export const StudentReportDialog = ({
             })}
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-4">
+            <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
               Tutup
             </Button>
             {!readOnly && (
-              <Button onClick={handleSave}>
+              <Button onClick={handleSave} className="w-full sm:w-auto">
                 <Save className="w-4 h-4 mr-2" />
                 Simpan
               </Button>

@@ -240,6 +240,165 @@ const ProgressReports = () => {
     }
   };
 
+  const handleDownloadPDF = async (item: ProgressReportListItem) => {
+    try {
+      toast.info("Memproses PDF rapor...");
+      const detail = await progressReportService.getById(item.id.toString());
+      if (!detail) {
+        toast.error("Gagal mendapatkan detail rapor.");
+        return;
+      }
+      const templates = await reportTemplateService.getAll();
+      const activeData = templates[0]?.data || [];
+      const VITE_API_URL = import.meta.env.VITE_API_URL || "http://192.168.1.184:3000/api";
+      const getImageUrl = (path: string) => path && !path.startsWith('data:') && !path.startsWith('http') ? `${VITE_API_URL}/reports/images/${path}` : path;
+
+      let htmlContent = `
+                <html>
+                  <head>
+                    <title>Rapor_${item.student?.name || 'Siswa'}</title>
+                    <style>
+                      @page { size: A4; margin: 0; }
+                      body { font-family: Arial, sans-serif; margin: 0; padding: 0; color: #000; box-sizing: border-box; }
+                      .header { text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 20px; border-bottom: 2px solid black; padding-bottom: 10px; }
+                      .sub-header { text-align: center; font-size: 14px; margin-bottom: 40px; }
+                      .info-table { width: 100%; margin-bottom: 30px; font-size: 14px; }
+                      .info-table td { padding: 4px; }
+                      .section-title { font-weight: bold; font-size: 16px; margin-top: 30px; margin-bottom: 10px; padding: 8px; page-break-after: avoid; break-after: avoid; }
+                      table.data-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; page-break-inside: auto; }
+                      table.data-table tr { page-break-inside: avoid; page-break-after: auto; }
+                      table.data-table thead { display: table-header-group; }
+                      table.data-table th, table.data-table td { border: 1px solid #000; padding: 8px; }
+                      table.data-table th { background-color: #f3f4f6; text-align: center; }
+                      .text-catatan { border: 1px solid #000; padding: 15px; margin-bottom: 15px; min-height: 100px; font-size: 14px; white-space: pre-wrap; page-break-inside: avoid; break-inside: avoid; }
+                      .text-section-container { border: 2px solid #94a3b8; border-radius: 12px; position: relative; padding: 25px 20px 20px; margin-top: 30px; margin-bottom: 20px; page-break-inside: avoid; break-inside: avoid; }
+                      .text-section-badge { position: absolute; top: -14px; left: 30px; background-color: #64748b; color: white; padding: 4px 20px; border-radius: 20px; font-weight: bold; font-size: 13px; text-transform: uppercase; }
+                      .text-content-wrap { font-size: 14px; white-space: pre-wrap; line-height: 1.6; margin-bottom: 15px; }
+                      .photo-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin-top: 15px; }
+                      .photo-item { width: 45%; max-width: 300px; padding: 5px; text-align: center; page-break-inside: avoid; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; }
+                      .photo-item img { max-width: 100%; max-height: 250px; object-fit: contain; border-radius: 4px; }
+                    </style>
+                  </head>
+                  <body>
+                    <table style="width: 100%; border: none; margin: 0; padding: 0;">
+                      <thead><tr><td style="height: 20mm; border: none; padding: 0;"></td></tr></thead>
+                      <tbody><tr><td style="padding: 0 20mm;">
+                        <div class="header">${detail.title.toUpperCase()}</div>
+                    <div class="sub-header">TAHUN AJARAN ${item.tahun_ajaran || item.year} - SEMESTER ${item.semester.toUpperCase()}</div>
+                    
+                    <table class="info-table">
+                      <tr>
+                        <td width="100"><strong>Nama Siswa</strong></td><td width="10">:</td><td>${item.student?.name || '-'}</td>
+                        <td width="100"><strong>Guru Wali</strong></td><td width="10">:</td><td>${item.createdBy?.name || '-'}</td>
+                      </tr>
+                      <tr>
+                        <td><strong>NISN</strong></td><td>:</td><td>${item.student?.nisn || '-'}</td>
+                        <td><strong>Kelas</strong></td><td>:</td><td>${item.student?.className || '-'}</td>
+                      </tr>
+                    </table>
+                `;
+
+      detail.data.forEach((sec) => {
+        if (sec.type === 'table' || sec.type === 'table_text') {
+          htmlContent += `<div class="section-title">${sec.Section}</div>`;
+          let headers = ["No", "Pernyataan", "Nilai", "Predikat", "Keterangan"];
+          const tSec = activeData.find((t: any) => t.Section === sec.Section);
+          if (tSec) {
+            let customHeaders = tSec.Headers?.length ? tSec.Headers : tSec.headers?.length ? tSec.headers : [];
+            if (customHeaders.length > 0) {
+              headers = customHeaders[0].toLowerCase() !== "no" ? ["No", ...customHeaders] : customHeaders;
+            }
+          }
+
+          htmlContent += `<table class="data-table"><thead><tr>`;
+          headers.forEach(h => htmlContent += `<th>${h}</th>`);
+          htmlContent += `</tr></thead><tbody>`;
+
+          sec.Questions.forEach((q, qIdx) => {
+            // ROW 1: Number and Question spanning across the rest of the columns
+            htmlContent += `<tr style="background-color: #f1f5f9; font-weight: bold;">
+                         <td style="text-align: center; width: 40px; border-bottom: none;">${qIdx + 1}</td>
+                         <td colspan="${Math.max(1, headers.length - 1)}" style="border-bottom: none;">${q.Question || ''}</td>
+                       </tr>`;
+
+            // ROW 2: Answers aligning with their respective headers
+            htmlContent += `<tr>
+                         <td style="border-top: none;"></td>
+                         <td style="border-top: none;"></td>`; // Empty column 2 below Question
+
+            if (headers.length >= 4) {
+              htmlContent += `<td style="text-align: center; border-top: none; font-weight: bold; vertical-align: middle;">${q.answer || ''}</td>`;
+            }
+            if (headers.length >= 5) {
+              htmlContent += `<td style="text-align: center; border-top: none; font-weight: bold; vertical-align: middle;">${q.predikat || ''}</td>`;
+            }
+            if (headers.length > 5) {
+              for (let i = 0; i < headers.length - 5; i++) {
+                htmlContent += `<td style="text-align: center; border-top: none;">-</td>`;
+              }
+            }
+            if (headers.length >= 3) {
+              htmlContent += `<td style="border-top: none; vertical-align: top;">${q.Ket || ''}</td>`;
+            }
+            htmlContent += `</tr>`;
+          });
+          htmlContent += `</tbody></table>`;
+        } else if (sec.type === 'text') {
+          const q = sec.Questions?.[0];
+          if (q) {
+            htmlContent += `<div class="section-title">${sec.Section}</div>`;
+            htmlContent += `<div class="text-section-container">`;
+            htmlContent += `<div class="text-section-badge">${q.Question}</div>`;
+
+            // if (q.Question && q.Question !== 'Catatan') {
+            //   htmlContent += `<div style="text-align: center; font-weight: bold; margin-bottom: 15px;">${q.Question}</div>`;
+            // }
+            if (q.Ket && q.Ket.trim() !== '') {
+              htmlContent += `<div class="text-content-wrap">${q.Ket}</div>`;
+            }
+
+            let photos: any[] = [];
+            if (Array.isArray(q.photos)) photos = q.photos;
+            else if (q.photo) photos = [q.photo];
+
+            if (photos.length > 0) {
+              htmlContent += `<div class="photo-grid">`;
+              photos.forEach(pf => {
+                if (pf && typeof pf === 'string') {
+                  htmlContent += `<div class="photo-item"><img src="${getImageUrl(pf)}" alt="Dokumentasi" /></div>`;
+                }
+              });
+              htmlContent += `</div>`;
+            }
+            htmlContent += `</div>`;
+          }
+        }
+      });
+
+      htmlContent += `
+                      </td></tr></tbody>
+                      <tfoot><tr><td style="height: 20mm; border: none; padding: 0;"></td></tr></tfoot>
+                    </table>
+                  </body>
+                  <script>
+                    setTimeout(() => { window.print(); window.close(); }, 800);
+                  </script>
+                </html>`;
+
+      const printWindow = window.open('', '', 'height=800,width=800');
+      if (!printWindow) {
+        toast.error("Pop-up diblokir. Harap izinkan pop-up untuk mencetak PDF.");
+        return;
+      }
+
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+    } catch (e) {
+      toast.error("Gagal memproses PDF rapor. Pastikan server terhubung.");
+      console.error(e);
+    }
+  };
+
   const columns: Column<ProgressReportListItem>[] = [
     { key: 'id', header: 'ID Rapor', render: (item) => `RPT-${String(item.id).padStart(3, '0')}` },
     { key: 'student', header: 'Nama Murid', render: (item) => item.student?.name || '-' },
@@ -279,165 +438,7 @@ const ProgressReports = () => {
             <Trash2 className="w-4 h-4 text-destructive" />
           </Button>
           {((item._count?.answers || 0) > 0) && (
-            <Button variant="ghost" size="sm" onClick={async () => {
-              try {
-                toast.info("Sedang memuat data rapor untuk PDF...");
-                const detail = await progressReportService.getById(item.id.toString());
-                if (!detail) {
-                  toast.error("Gagal mendapatkan detail rapor.");
-                  return;
-                }
-                const templates = await reportTemplateService.getAll();
-                const activeData = templates[0]?.data || [];
-
-                const printWindow = window.open('', '', 'height=800,width=800');
-                if (!printWindow) {
-                  toast.error("Pop-up diblokir. Harap izinkan pop-up untuk mencetak PDF.");
-                  return;
-                }
-
-                const VITE_API_URL = import.meta.env.VITE_API_URL || "http://192.168.1.184:3000/api";
-                const getImageUrl = (path: string) => path && !path.startsWith('data:') && !path.startsWith('http') ? `${VITE_API_URL}/reports/images/${path}` : path;
-
-                let htmlContent = `
-                <html>
-                  <head>
-                    <title>Rapor_${item.student?.name || 'Siswa'}</title>
-                    <style>
-                      @page { size: A4; margin: 0; }
-                      body { font-family: Arial, sans-serif; margin: 0; padding: 0; color: #000; box-sizing: border-box; }
-                      .header { text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 20px; border-bottom: 2px solid black; padding-bottom: 10px; }
-                      .sub-header { text-align: center; font-size: 14px; margin-bottom: 40px; }
-                      .info-table { width: 100%; margin-bottom: 30px; font-size: 14px; }
-                      .info-table td { padding: 4px; }
-                      .section-title { font-weight: bold; font-size: 16px; margin-top: 30px; margin-bottom: 10px; background-color: #f3f4f6; padding: 8px; border-left: 4px solid #3b82f6; page-break-after: avoid; break-after: avoid; }
-                      table.data-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; page-break-inside: auto; }
-                      table.data-table tr { page-break-inside: avoid; page-break-after: auto; }
-                      table.data-table thead { display: table-header-group; }
-                      table.data-table th, table.data-table td { border: 1px solid #000; padding: 8px; }
-                      table.data-table th { background-color: #f3f4f6; text-align: center; }
-                      .text-catatan { border: 1px solid #000; padding: 15px; margin-bottom: 15px; min-height: 100px; font-size: 14px; white-space: pre-wrap; page-break-inside: avoid; break-inside: avoid; }
-                      .text-section-container { border: 2px solid #94a3b8; border-radius: 12px; position: relative; padding: 25px 20px 20px; margin-top: 30px; margin-bottom: 20px; page-break-inside: avoid; break-inside: avoid; }
-                      .text-section-badge { position: absolute; top: -14px; left: 30px; background-color: #64748b; color: white; padding: 4px 20px; border-radius: 20px; font-weight: bold; font-size: 13px; text-transform: uppercase; }
-                      .text-content-wrap { font-size: 14px; white-space: pre-wrap; line-height: 1.6; margin-bottom: 15px; }
-                      .photo-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin-top: 15px; }
-                      .photo-item { width: 45%; max-width: 300px; padding: 5px; text-align: center; page-break-inside: avoid; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; }
-                      .photo-item img { max-width: 100%; max-height: 250px; object-fit: contain; border-radius: 4px; }
-                    </style>
-                  </head>
-                  <body>
-                    <table style="width: 100%; border: none; margin: 0; padding: 0;">
-                      <thead><tr><td style="height: 20mm; border: none; padding: 0;"></td></tr></thead>
-                      <tbody><tr><td style="padding: 0 20mm;">
-                        <div class="header">${detail.title.toUpperCase()}</div>
-                    <div class="sub-header">TAHUN AJARAN ${item.tahun_ajaran || item.year} - SEMESTER ${item.semester.toUpperCase()}</div>
-                    
-                    <table class="info-table">
-                      <tr>
-                        <td width="100"><strong>Nama Siswa</strong></td><td width="10">:</td><td>${item.student?.name || '-'}</td>
-                        <td width="100"><strong>Guru Wali</strong></td><td width="10">:</td><td>${item.createdBy?.name || '-'}</td>
-                      </tr>
-                      <tr>
-                        <td><strong>NISN</strong></td><td>:</td><td>${item.student?.nisn || '-'}</td>
-                        <td><strong>Kelas</strong></td><td>:</td><td>${item.student?.className || '-'}</td>
-                      </tr>
-                    </table>
-                `;
-
-                detail.data.forEach((sec) => {
-                  if (sec.type === 'table' || sec.type === 'table_text') {
-                    htmlContent += `<div class="section-title">${sec.Section}</div>`;
-                    let headers = ["No", "Pernyataan", "Nilai", "Predikat", "Keterangan"];
-                    const tSec = activeData.find((t: any) => t.Section === sec.Section);
-                    if (tSec) {
-                      let customHeaders = tSec.Headers?.length ? tSec.Headers : tSec.headers?.length ? tSec.headers : [];
-                      if (customHeaders.length > 0) {
-                        headers = customHeaders[0].toLowerCase() !== "no" ? ["No", ...customHeaders] : customHeaders;
-                      }
-                    }
-
-                    htmlContent += `<table class="data-table"><thead><tr>`;
-                    headers.forEach(h => htmlContent += `<th>${h}</th>`);
-                    htmlContent += `</tr></thead><tbody>`;
-
-                    sec.Questions.forEach((q, qIdx) => {
-                      // ROW 1: Number and Question spanning across the rest of the columns
-                      htmlContent += `<tr style="background-color: #f1f5f9; font-weight: bold;">
-                         <td style="text-align: center; width: 40px; border-bottom: none;">${qIdx + 1}</td>
-                         <td colspan="${Math.max(1, headers.length - 1)}" style="border-bottom: none;">${q.Question || ''}</td>
-                       </tr>`;
-
-                      // ROW 2: Answers aligning with their respective headers
-                      htmlContent += `<tr>
-                         <td style="border-top: none;"></td>
-                         <td style="border-top: none;"></td>`; // Empty column 2 below Question
-
-                      if (headers.length >= 4) {
-                        htmlContent += `<td style="text-align: center; border-top: none; font-weight: bold; vertical-align: middle;">${q.answer || ''}</td>`;
-                      }
-                      if (headers.length >= 5) {
-                        htmlContent += `<td style="text-align: center; border-top: none; font-weight: bold; vertical-align: middle;">${q.predikat || ''}</td>`;
-                      }
-                      if (headers.length > 5) {
-                        for (let i = 0; i < headers.length - 5; i++) {
-                          htmlContent += `<td style="text-align: center; border-top: none;">-</td>`;
-                        }
-                      }
-                      if (headers.length >= 3) {
-                        htmlContent += `<td style="border-top: none; vertical-align: top;">${q.Ket || ''}</td>`;
-                      }
-                      htmlContent += `</tr>`;
-                    });
-                    htmlContent += `</tbody></table>`;
-                  } else if (sec.type === 'text') {
-                    const q = sec.Questions?.[0];
-                    if (q) {
-                      htmlContent += `<div class="text-section-container">`;
-                      htmlContent += `<div class="text-section-badge">${sec.Section}</div>`;
-
-                      if (q.Question && q.Question !== 'Catatan') {
-                        htmlContent += `<div style="text-align: center; font-weight: bold; margin-bottom: 15px;">${q.Question}</div>`;
-                      }
-                      if (q.Ket && q.Ket.trim() !== '') {
-                        htmlContent += `<div class="text-content-wrap">${q.Ket}</div>`;
-                      }
-
-                      let photos: any[] = [];
-                      if (Array.isArray(q.photos)) photos = q.photos;
-                      else if (q.photo) photos = [q.photo];
-
-                      if (photos.length > 0) {
-                        htmlContent += `<div class="photo-grid">`;
-                        photos.forEach(pf => {
-                          if (pf && typeof pf === 'string') {
-                            htmlContent += `<div class="photo-item"><img src="${getImageUrl(pf)}" alt="Dokumentasi" /></div>`;
-                          }
-                        });
-                        htmlContent += `</div>`;
-                      }
-                      htmlContent += `</div>`;
-                    }
-                  }
-                });
-
-                htmlContent += `
-                      </td></tr></tbody>
-                      <tfoot><tr><td style="height: 20mm; border: none; padding: 0;"></td></tr></tfoot>
-                    </table>
-                  </body>
-                  <script>
-                    setTimeout(() => { window.print(); window.close(); }, 800);
-                  </script>
-                </html>`;
-
-                printWindow.document.write(htmlContent);
-                printWindow.document.close();
-
-              } catch (e) {
-                toast.error("Gagal memproses PDF rapor. Pastikan server terhubung.");
-                console.error(e);
-              }
-            }}>
+            <Button variant="ghost" size="sm" onClick={() => handleDownloadPDF(item)}>
               <Download className="w-4 h-4" />
             </Button>
           )}

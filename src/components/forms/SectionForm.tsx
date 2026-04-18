@@ -45,14 +45,18 @@ export const SectionForm = ({ open, onOpenChange, onSubmit, initialData }: Secti
       ? questions.map(q => ({ ...q, answers: answerOptions }))
       : questions;
 
-    if (type === 'text' && finalQuestions.length === 0) {
-      finalQuestions = [{
-        Question: 'Catatan',
-        answer: '',
-        answers: [],
-        photo: '',
-        Ket: ''
-      }];
+    if (type === 'text') {
+      if (finalQuestions.length === 0) {
+        finalQuestions = [{
+          Question: 'Catatan',
+          answer: '',
+          answers: [],
+          photo: '',
+          Ket: ''
+        }];
+      } else if (!finalQuestions[0].Question || finalQuestions[0].Question.trim() === '') {
+        finalQuestions[0].Question = 'Catatan';
+      }
     }
 
     onSubmit({
@@ -119,31 +123,31 @@ export const SectionForm = ({ open, onOpenChange, onSubmit, initialData }: Secti
 
   const renderHeadersEditor = () => (
     <div className="space-y-4 mb-6 border-b pb-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+        <div className="flex-1">
           <Label>Kustomisasi Kolom (Headers)</Label>
           <p className="text-xs text-muted-foreground mt-1">Kosongkan jika ingin menggunakan kolom default. Kolom "No" akan dibuat otomatis secara default pada frontend.</p>
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={addHeader} disabled={headers.length >= 4}>
+        <Button type="button" variant="outline" size="sm" onClick={addHeader} disabled={headers.length >= 4} className="whitespace-nowrap">
           <Plus className="w-4 h-4 mr-1" />
           Tambah Kolom {headers.length >= 4 && '(Maks 5)'}
         </Button>
       </div>
       {(type === 'table_text' || type === 'table') && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-2">
           {headers.map((hdr, index) => (
-            <div key={index} className="flex items-center gap-1">
+            <div key={index} className="flex items-center gap-1 w-full sm:w-auto">
               <Input
                 value={hdr}
                 onChange={(e) => updateHeader(index, e.target.value)}
-                className="w-40"
+                className="flex-1 sm:w-40"
                 placeholder="Nama Kolom"
               />
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-8 w-8 flex-shrink-0"
                 onClick={() => removeHeader(index)}
               >
                 <X className="w-4 h-4" />
@@ -199,20 +203,20 @@ export const SectionForm = ({ open, onOpenChange, onSubmit, initialData }: Secti
     <div className="space-y-6">
       {/* Answer Options (Predikat) */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label>Pilihan Jawaban (Header Kolom)</Label>
-          <Button type="button" variant="outline" size="sm" onClick={addAnswerOption}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <Label className="flex-1">Pilihan Jawaban (Header Kolom)</Label>
+          <Button type="button" variant="outline" size="sm" onClick={addAnswerOption} className="whitespace-nowrap w-full sm:w-auto">
             <Plus className="w-4 h-4 mr-1" />
             Tambah
           </Button>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-2">
           {answerOptions.map((opt, index) => (
-            <div key={index} className="flex items-center gap-1">
+            <div key={index} className="flex items-center gap-1 w-full sm:w-auto">
               <Input
                 value={opt}
                 onChange={(e) => updateAnswerOption(index, e.target.value)}
-                className="w-40"
+                className="flex-1 sm:w-40"
                 placeholder="Nama pilihan"
               />
               {answerOptions.length > 2 && (
@@ -220,7 +224,7 @@ export const SectionForm = ({ open, onOpenChange, onSubmit, initialData }: Secti
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8"
+                  className="h-8 w-8 flex-shrink-0"
                   onClick={() => removeAnswerOption(index)}
                 >
                   <X className="w-4 h-4" />
@@ -233,9 +237,9 @@ export const SectionForm = ({ open, onOpenChange, onSubmit, initialData }: Secti
 
       {/* Questions */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label>Daftar Pertanyaan (Aspek Penilaian)</Label>
-          <Button type="button" variant="outline" size="sm" onClick={addQuestion}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <Label className="flex-1">Daftar Pertanyaan (Aspek Penilaian)</Label>
+          <Button type="button" variant="outline" size="sm" onClick={addQuestion} className="whitespace-nowrap w-full sm:w-auto">
             <Plus className="w-4 h-4 mr-1" />
             Tambah
           </Button>
@@ -253,6 +257,7 @@ export const SectionForm = ({ open, onOpenChange, onSubmit, initialData }: Secti
                 type="button"
                 variant="ghost"
                 size="icon"
+                className="flex-shrink-0"
                 onClick={() => removeQuestion(index)}
               >
                 <X className="w-4 h-4" />
@@ -269,24 +274,50 @@ export const SectionForm = ({ open, onOpenChange, onSubmit, initialData }: Secti
     </div>
   );
 
-  const renderTextEditor = () => (
-    <div className="space-y-4">
-      <div className="p-4 bg-muted/50 rounded-lg border border-border">
-        <p className="text-sm text-foreground font-medium mb-2">Informasi Section</p>
-        <p className="text-sm text-muted-foreground mb-4">
-          Tipe section <strong>"Teks & Gambar"</strong> difungsikan sebagai area input dinamis. Anda tidak perlu menambahkan field apapun di sini.
-        </p>
-        <ul className="text-xs text-muted-foreground space-y-1 ml-4 list-disc">
-          <li>Pengguna akan mendapatkan satu kotak teks catatan besar.</li>
-          <li>Pengguna dapat mengunggah hingga maksimal 4 baris foto pendukung yang akan ditampilkan di bawah teks.</li>
-        </ul>
+  const renderTextEditor = () => {
+    const questionText = questions[0]?.Question === 'Catatan' ? '' : (questions[0]?.Question || '');
+    
+    return (
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label>Judul Konten (Opsional)</Label>
+          <Input 
+            placeholder="Masukkan judul untuk bagian ini..."
+            value={questionText}
+            onChange={(e) => {
+              const newQuestions = [...questions];
+              if (newQuestions.length === 0) {
+                newQuestions.push({
+                  Question: e.target.value,
+                  answer: '',
+                  answers: [],
+                  photo: '',
+                  Ket: ''
+                });
+              } else {
+                newQuestions[0].Question = e.target.value;
+              }
+              setQuestions(newQuestions);
+            }}
+          />
+        </div>
+        <div className="p-4 bg-muted/50 rounded-lg border border-border">
+          <p className="text-sm text-foreground font-medium mb-2">Informasi Section</p>
+          <p className="text-sm text-muted-foreground mb-4">
+            Tipe section <strong>"Teks & Gambar"</strong> memiliki area input dinamis.
+          </p>
+          <ul className="text-xs text-muted-foreground space-y-1 ml-4 list-disc">
+            <li>Pengguna akan mendapatkan satu kotak teks catatan besar.</li>
+            <li>Pengguna dapat mengunggah hingga maksimal 4 baris foto pendukung yang akan ditampilkan di bawah teks.</li>
+          </ul>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{initialData ? 'Edit Section' : 'Tambah Section Baru'}</DialogTitle>
         </DialogHeader>
@@ -329,11 +360,11 @@ export const SectionForm = ({ open, onOpenChange, onSubmit, initialData }: Secti
             {type === 'text' && renderTextEditor()}
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
             Batal
           </Button>
-          <Button onClick={handleSubmit}>
+          <Button onClick={handleSubmit} className="w-full sm:w-auto">
             {initialData ? 'Update' : 'Simpan'}
           </Button>
         </DialogFooter>

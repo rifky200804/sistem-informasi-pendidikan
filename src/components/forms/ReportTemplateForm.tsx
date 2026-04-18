@@ -50,7 +50,7 @@ export const ReportTemplateForm = ({ open, onOpenChange, onSubmit, initialData }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{initialData ? 'Edit Template' : 'Buat Template Baru'}</DialogTitle>
         </DialogHeader>
@@ -89,11 +89,11 @@ export const ReportTemplateForm = ({ open, onOpenChange, onSubmit, initialData }
             * Section template dapat ditambahkan setelah template dibuat di halaman Template Rapor.
           </p>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
             Batal
           </Button>
-          <Button onClick={handleSubmit}>
+          <Button onClick={handleSubmit} className="w-full sm:w-auto">
             {initialData ? 'Update' : 'Simpan'}
           </Button>
         </DialogFooter>
