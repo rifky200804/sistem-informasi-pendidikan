@@ -73,7 +73,7 @@ export function TeacherForm({ open, onOpenChange, onSubmit, teacher }: TeacherFo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="w-[95vw] sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{teacher ? "Edit Guru" : "Tambah Guru Baru"}</DialogTitle>
           <DialogDescription>
@@ -143,8 +143,8 @@ export function TeacherForm({ open, onOpenChange, onSubmit, teacher }: TeacherFo
                 </FormItem>
               )}
             />
-            <DialogFooter>
-              <Button type="submit">{teacher ? "Simpan Perubahan" : "Tambah Guru"}</Button>
+            <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-4">
+              <Button type="submit" className="w-full sm:w-auto">{teacher ? "Simpan Perubahan" : "Tambah Guru"}</Button>
             </DialogFooter>
           </form>
         </Form>

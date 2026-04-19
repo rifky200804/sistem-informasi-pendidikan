@@ -69,7 +69,7 @@ export const CreateReportDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Buat Rapor Baru</DialogTitle>
         </DialogHeader>
@@ -119,11 +119,11 @@ export const CreateReportDialog = ({
             </Select>
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
             Batal
           </Button>
-          <Button onClick={handleSubmit} disabled={!selectedStudent || loadingStudents}>
+          <Button onClick={handleSubmit} disabled={!selectedStudent || loadingStudents} className="w-full sm:w-auto">
             Buat Rapor
           </Button>
         </DialogFooter>

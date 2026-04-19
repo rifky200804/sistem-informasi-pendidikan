@@ -86,7 +86,7 @@ export function StudentForm({ open, onOpenChange, onSubmit, student }: StudentFo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{student ? "Edit Murid" : "Tambah Murid Baru"}</DialogTitle>
           <DialogDescription>
@@ -199,8 +199,8 @@ export function StudentForm({ open, onOpenChange, onSubmit, student }: StudentFo
                 </FormItem>
               )}
             />
-            <DialogFooter>
-              <Button type="submit">{student ? "Simpan Perubahan" : "Tambah Murid"}</Button>
+            <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-4">
+              <Button type="submit" className="w-full sm:w-auto">{student ? "Simpan Perubahan" : "Tambah Murid"}</Button>
             </DialogFooter>
           </form>
         </Form>

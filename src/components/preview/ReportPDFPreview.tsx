@@ -70,7 +70,7 @@ export const ReportPDFPreview = ({
         yPosition = (doc as any).lastAutoTable.finalY + 10;
       } else if (section.type === "table") {
         const answerOptions = section.Questions?.[0]?.answers || ["Belum Berkembang", "Mulai Berkembang", "Berkembang Sesuai Harapan", "Berkembang Sangat Baik"];
-        
+
         let cols = section.Headers?.length ? section.Headers : section.headers?.length ? section.headers : ["Pernyataan", "Nilai", "Predikat", "Keterangan"];
         if (cols.length > 0 && cols[0].toLowerCase() !== "no") {
           cols = ["No", ...cols];
@@ -131,10 +131,12 @@ export const ReportPDFPreview = ({
     return (
       <div className="bg-white p-8 min-h-full text-black">
         <h1 className="text-xl font-bold text-center mb-6">{templateName}</h1>
-        
+
         {sections.map((section, idx) => (
           <div key={section.id || idx} className="mb-6">
-            <h2 className="font-bold text-sm mb-2">{section.Section}</h2>
+            {(section.type !== "text" || section.Section !== "") && (
+              <h2 className="font-bold text-base mt-7 mb-3 p-2">{section.Section}</h2>
+            )}
 
             {section.type === "table_text" && (() => {
               let cols = section.Headers?.length ? section.Headers : section.headers?.length ? section.headers : ["Pernyataan", "Nilai", "Predikat", "Keterangan"];
@@ -160,9 +162,9 @@ export const ReportPDFPreview = ({
                       <tr key={i}>
                         <td className="border border-gray-400 p-2 text-center">{i + 1}</td>
                         <td className="border border-gray-400 p-2">{q.Question}</td>
-                         {Array.from({ length: Math.max(0, cols.length - 2) }).map((_, colIdx) => (
-                           <td key={colIdx} className="border border-gray-400 p-2"></td>
-                         ))}
+                        {Array.from({ length: Math.max(0, cols.length - 2) }).map((_, colIdx) => (
+                          <td key={colIdx} className="border border-gray-400 p-2"></td>
+                        ))}
                       </tr>
                     ))}
                   </tbody>
@@ -217,7 +219,7 @@ export const ReportPDFPreview = ({
             })()}
 
             {section.type === "text" && (
-              <div className="border border-gray-400 p-4 text-center text-gray-400 text-xs">
+              <div className="border border-gray-400 p-4 text-gray-400 text-xs">
                 ({section.Questions?.[0]?.Question || "Catatan"})
               </div>
             )}

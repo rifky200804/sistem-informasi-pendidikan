@@ -121,7 +121,7 @@ export function AnecdoteForm({ open, onOpenChange, onSubmit, anecdote }: Anecdot
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{anecdote ? "Edit Anekdot" : "Tambah Anekdot Baru"}</DialogTitle>
           <DialogDescription>
@@ -276,8 +276,8 @@ export function AnecdoteForm({ open, onOpenChange, onSubmit, anecdote }: Anecdot
                 </FormItem>
               )}
             />
-            <DialogFooter>
-              <Button type="submit">{anecdote ? "Simpan Perubahan" : "Tambah Anekdot"}</Button>
+            <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-4">
+              <Button type="submit" className="w-full sm:w-auto">{anecdote ? "Simpan Perubahan" : "Tambah Anekdot"}</Button>
             </DialogFooter>
           </form>
         </Form>

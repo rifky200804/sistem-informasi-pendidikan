@@ -13,7 +13,7 @@ import { ReportTemplateForm } from "@/components/forms/ReportTemplateForm";
 const ReportTemplates = () => {
   const { templates, loading, createTemplate, updateTemplate } = useReportTemplates();
   const activeTemplate = templates[0];
-  
+
   const [templateFormOpen, setTemplateFormOpen] = useState(false);
   const [editingTemplateData, setEditingTemplateData] = useState<ReportTemplate | null>(null);
 
@@ -48,7 +48,7 @@ const ReportTemplates = () => {
     try {
       await createTemplate(data);
       setTemplateFormOpen(false);
-    } catch (e) {}
+    } catch (e) { }
   };
 
   const getFormattedSections = (sections: Section[]) => {
@@ -103,7 +103,7 @@ const ReportTemplates = () => {
       }
       setTemplateFormOpen(false);
       setEditingTemplateData(null);
-    } catch (e) {}
+    } catch (e) { }
   };
 
   // Section Handlers
@@ -119,7 +119,7 @@ const ReportTemplates = () => {
 
   const handleSaveSection = (sectionData: Section) => {
     let newSections = [...localSections];
-    
+
     if (selectedSection) {
       newSections = newSections.map(s => s.id === selectedSection.id ? { ...sectionData, id: selectedSection.id } : s);
     } else {
@@ -139,7 +139,7 @@ const ReportTemplates = () => {
   const handleDeleteConfirm = () => {
     if (!selectedSection) return;
     const newSections = localSections.filter(s => s.id !== selectedSection.id);
-    
+
     setLocalSections(newSections);
     setDeleteDialogOpen(false);
     setSelectedSection(null);
@@ -188,7 +188,7 @@ const ReportTemplates = () => {
       </th>
     ));
   };
-  
+
   const getColumnCount = (section: Section, defaultHeaders: string[]) => {
     let cols = section.Headers?.length ? section.Headers : section.headers?.length ? section.headers : defaultHeaders;
     if (cols.length > 0 && cols[0].toLowerCase() !== 'no') {
@@ -252,9 +252,9 @@ const ReportTemplates = () => {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-foreground">Section Template</h2>
                 <div className="flex items-center gap-2">
-                  <Button 
-                    variant={hasChanges ? "default" : "secondary"} 
-                    disabled={!hasChanges || isSavingSections} 
+                  <Button
+                    variant={hasChanges ? "default" : "secondary"}
+                    disabled={!hasChanges || isSavingSections}
                     onClick={handleSimpanSemuaPerubahan}
                   >
                     {isSavingSections ? "Menyimpan..." : "Simpan Perubahan"}
@@ -325,7 +325,7 @@ const ReportTemplates = () => {
                             } else if (cols.length === 0) {
                               cols = ['No', ...defaultHeaders];
                             }
-                            
+
                             const options = q.answers || section.Questions?.[0]?.answers || ['Belum Berkembang', 'Mulai Berkembang', 'Berkembang Sesuai Harapan', 'Berkembang Sangat Baik'];
 
                             return (
@@ -363,16 +363,19 @@ const ReportTemplates = () => {
                     )}
 
                     {section.type === 'text' && (
-                      <div className="border border-dashed p-6 space-y-4 bg-muted/20 rounded-md flex flex-col items-center justify-center text-center">
-                         <div className="w-full text-sm text-muted-foreground italic mb-2">
-                            (Area penulisan catatan naratif)
-                         </div>
-                         <div className="flex gap-2 opacity-50">
-                            <div className="w-16 h-16 border rounded bg-background flex items-center justify-center text-[10px]">Foto 1</div>
-                            <div className="w-16 h-16 border rounded bg-background flex items-center justify-center text-[10px]">Foto 2</div>
-                            <div className="w-16 h-16 border rounded bg-background flex items-center justify-center text-[10px]">Foto 3</div>
-                            <div className="w-16 h-16 border rounded bg-background flex items-center justify-center text-[10px]">Foto 4</div>
-                         </div>
+                      <div className="border border-dashed p-6 space-y-4 bg-muted/20 rounded-md flex flex-col justify-start">
+                        {section.Questions?.[0]?.Question && section.Questions[0].Question !== 'Catatan' && (
+                          <div className="font-semibold text-foreground">{section.Questions[0].Question}</div>
+                        )}
+                        <div className="w-full text-sm text-muted-foreground italic mb-2">
+                          (Area penulisan catatan naratif)
+                        </div>
+                        <div className="flex gap-2 opacity-50">
+                          <div className="w-16 h-16 border rounded bg-background flex items-center justify-center text-[10px]">Foto 1</div>
+                          <div className="w-16 h-16 border rounded bg-background flex items-center justify-center text-[10px]">Foto 2</div>
+                          <div className="w-16 h-16 border rounded bg-background flex items-center justify-center text-[10px]">Foto 3</div>
+                          <div className="w-16 h-16 border rounded bg-background flex items-center justify-center text-[10px]">Foto 4</div>
+                        </div>
                       </div>
                     )}
                   </div>

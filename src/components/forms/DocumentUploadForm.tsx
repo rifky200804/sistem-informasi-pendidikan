@@ -53,7 +53,7 @@ export const DocumentUploadForm = ({ open, onOpenChange, onSubmit }: DocumentUpl
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Upload Dokumen</DialogTitle>
         </DialogHeader>
@@ -127,11 +127,11 @@ export const DocumentUploadForm = ({ open, onOpenChange, onSubmit }: DocumentUpl
             </div>
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
             Batal
           </Button>
-          <Button onClick={handleSubmit} disabled={!file || !title || !type || !category}>
+          <Button onClick={handleSubmit} disabled={!file || !title || !type || !category} className="w-full sm:w-auto">
             Upload
           </Button>
         </DialogFooter>
