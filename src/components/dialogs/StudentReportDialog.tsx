@@ -40,13 +40,15 @@ export const StudentReportDialog = ({
   const [currentSectionId, setCurrentSectionId] = useState("");
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
+  const getSectionKey = (section: any, index: number) => section.id || section.Section || `section-${index}`;
+
   useEffect(() => {
     if (reportData) {
       setFormData(reportData);
     } else {
       const initialData: Record<string, any> = {};
-      sections.forEach((section) => {
-        const sectionId = section.id || section.Section;
+      sections.forEach((section, index) => {
+        const sectionId = getSectionKey(section, index);
         if (section.type === "table_text") {
           const rows = section.Questions?.map((q: Question) => ({
             Question: q.Question,
@@ -179,8 +181,8 @@ export const StudentReportDialog = ({
               </tbody>
             </table>
 
-            {sections.map((sec: any) => {
-              const sectionId = sec.id || sec.Section;
+            {sections.map((sec: any, idx: number) => {
+              const sectionId = getSectionKey(sec, idx);
               const sectionData = formData[sectionId];
 
               if (!sectionData) return null;
@@ -284,8 +286,8 @@ export const StudentReportDialog = ({
           </DialogHeader>
 
           <div className="space-y-6 py-4">
-            {sections.map((section: any) => {
-              const sectionId = section.id || section.Section;
+            {sections.map((section: any, index: number) => {
+              const sectionId = getSectionKey(section, index);
 
               let formHeaders = section.Headers?.length ? section.Headers : section.headers?.length ? section.headers : [];
               if (formHeaders.length > 0 && formHeaders[0]?.toLowerCase() === "no") formHeaders = formHeaders.slice(1);

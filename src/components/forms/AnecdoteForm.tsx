@@ -62,15 +62,11 @@ export function AnecdoteForm({ open, onOpenChange, onSubmit, anecdote }: Anecdot
       description: anecdote.description || "",
       date: anecdote.date || new Date().toISOString().split('T')[0],
       category: anecdote.category as any || "umum",
-      studentId: anecdote.studentId ? Number(anecdote.studentId) : undefined,
-      teacherId: anecdote.teacherId || undefined,
     } : {
       content: "",
       description: "",
       date: new Date().toISOString().split('T')[0],
       category: "umum",
-      studentId: undefined,
-      teacherId: undefined,
     },
   });
 
@@ -81,14 +77,12 @@ export function AnecdoteForm({ open, onOpenChange, onSubmit, anecdote }: Anecdot
         description: anecdote.description || "",
         date: anecdote.date || new Date().toISOString().split('T')[0],
         category: anecdote.category as any || "umum",
-        studentId: anecdote.studentId ? Number(anecdote.studentId) : undefined,
         teacherId: anecdote.teacherId || undefined,
       } : {
         content: "",
         description: "",
         date: new Date().toISOString().split('T')[0],
         category: "umum",
-        studentId: undefined,
         teacherId: undefined,
       });
 
@@ -130,65 +124,6 @@ export function AnecdoteForm({ open, onOpenChange, onSubmit, anecdote }: Anecdot
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-
-            <FormField
-              control={form.control}
-              name="studentId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Siswa</FormLabel>
-                  <Select
-                    onValueChange={(val) => field.onChange(Number(val))}
-                    value={field.value ? String(field.value) : ""}
-                    disabled={loadingOptions}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={loadingOptions ? "Memuat..." : "Pilih siswa"} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {Array.isArray(studentOptions) && studentOptions.map((opt, idx) => (
-                        <SelectItem key={opt.value || idx} value={opt.value ? String(opt.value) : `opt-${idx}`}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="teacherId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Guru</FormLabel>
-                  <Select
-                    onValueChange={(val) => field.onChange(Number(val))}
-                    value={field.value ? String(field.value) : ""}
-                    disabled={loadingOptions}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={loadingOptions ? "Memuat..." : "Pilih guru"} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {Array.isArray(teacherOptions) && teacherOptions.map((opt, idx) => (
-                        <SelectItem key={opt.value || idx} value={opt.value ? String(opt.value) : `opt-${idx}`}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <FormField
               control={form.control}
               name="content"

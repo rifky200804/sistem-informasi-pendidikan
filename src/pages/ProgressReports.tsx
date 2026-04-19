@@ -70,10 +70,12 @@ const ProgressReports = () => {
     }
   };
 
+  const getSectionKey = (section: any, index: number) => section.id || section.Section || `section-${index}`;
+
   const parseBackendToFormData = (backendData: any[]) => {
     const parsedData: Record<string, any> = {};
-    backendData?.forEach((backendSection) => {
-      const sectionId = backendSection.Section;
+    backendData?.forEach((backendSection, index) => {
+      const sectionId = getSectionKey(backendSection, index);
       if (backendSection.type === "table_text" || backendSection.type === "table") {
         parsedData[sectionId] = {
           rows: backendSection.Questions?.map((q: any) => ({
@@ -185,8 +187,8 @@ const ProgressReports = () => {
     try {
       setIsLoading(true);
 
-      const payloadData = activeTemplateSections.map((section) => {
-        const sectionId = section.id || section.Section;
+      const payloadData = activeTemplateSections.map((section, index) => {
+        const sectionId = getSectionKey(section, index);
         const formDataSection = formData[sectionId];
         let newQuestions: any[] = [];
 
