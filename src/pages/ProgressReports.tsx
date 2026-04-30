@@ -271,7 +271,7 @@ const ProgressReports = () => {
                       table.data-table tr { page-break-inside: avoid; page-break-after: auto; }
                       table.data-table thead { display: table-header-group; }
                       table.data-table th, table.data-table td { border: 1px solid #000; padding: 8px; }
-                      table.data-table th { background-color: #f3f4f6; text-align: center; }
+                      table.data-table th { background-color: #dbeafe; color: #1e40af; text-align: center; }
                       .text-catatan { border: 1px solid #000; padding: 15px; margin-bottom: 15px; min-height: 100px; font-size: 14px; white-space: pre-wrap; page-break-inside: avoid; break-inside: avoid; }
                       .text-section-container { border: 2px solid #94a3b8; border-radius: 12px; position: relative; padding: 25px 20px 20px; margin-top: 30px; margin-bottom: 20px; page-break-inside: avoid; break-inside: avoid; }
                       .text-section-badge { position: absolute; top: -14px; left: 30px; background-color: #64748b; color: white; padding: 4px 20px; border-radius: 20px; font-weight: bold; font-size: 13px; text-transform: uppercase; }
@@ -301,7 +301,7 @@ const ProgressReports = () => {
                 `;
 
       detail.data.forEach((sec) => {
-        if (sec.type === 'table' || sec.type === 'table_text') {
+        if (sec.type === 'table_text') {
           htmlContent += `<div class="section-title">${sec.Section}</div>`;
           let headers = ["No", "Pernyataan", "Nilai", "Predikat", "Keterangan"];
           const tSec = activeData.find((t: any) => t.Section === sec.Section);
@@ -317,17 +317,13 @@ const ProgressReports = () => {
           htmlContent += `</tr></thead><tbody>`;
 
           sec.Questions.forEach((q, qIdx) => {
-            // ROW 1: Number and Question spanning across the rest of the columns
             htmlContent += `<tr style="background-color: #f1f5f9; font-weight: bold;">
                          <td style="text-align: center; width: 40px; border-bottom: none;">${qIdx + 1}</td>
                          <td colspan="${Math.max(1, headers.length - 1)}" style="border-bottom: none;">${q.Question || ''}</td>
                        </tr>`;
-
-            // ROW 2: Answers aligning with their respective headers
             htmlContent += `<tr>
                          <td style="border-top: none;"></td>
-                         <td style="border-top: none;"></td>`; // Empty column 2 below Question
-
+                         <td style="border-top: none;"></td>`;
             if (headers.length >= 4) {
               htmlContent += `<td style="text-align: center; border-top: none; font-weight: bold; vertical-align: middle;">${q.answer || ''}</td>`;
             }
@@ -344,6 +340,44 @@ const ProgressReports = () => {
             }
             htmlContent += `</tr>`;
           });
+
+          htmlContent += `</tbody></table>`;
+        } else if (sec.type === 'table') {
+          htmlContent += `<div class="section-title">${sec.Section}</div>`;
+          let headers = ["No", "Pernyataan", "Nilai", "Predikat", "Keterangan"];
+          const tSec = activeData.find((t: any) => t.Section === sec.Section);
+          if (tSec) {
+            const customHeaders = tSec.Headers?.length ? tSec.Headers : tSec.headers?.length ? tSec.headers : [];
+            if (customHeaders.length > 0) {
+              headers = customHeaders[0].toLowerCase() !== "no" ? ["No", ...customHeaders] : customHeaders;
+            }
+          }
+
+          htmlContent += `<table class="data-table"><thead><tr>`;
+          headers.forEach(h => htmlContent += `<th>${h}</th>`);
+          htmlContent += `</tr></thead><tbody>`;
+
+          sec.Questions.forEach((q, qIdx) => {
+            htmlContent += `<tr>`;
+            headers.forEach((h) => {
+              const key = h.toLowerCase().trim();
+              if (key === 'no') {
+                htmlContent += `<td style="text-align: center; width: 40px;">${qIdx + 1}</td>`;
+              } else if (['pernyataan', 'pertanyaan'].includes(key)) {
+                htmlContent += `<td style="text-align: left;">${q.Question || ''}</td>`;
+              } else if (key === 'nilai') {
+                htmlContent += `<td style="text-align: center;">${q.answer || ''}</td>`;
+              } else if (key === 'predikat') {
+                htmlContent += `<td style="text-align: center;">${q.predikat || ''}</td>`;
+              } else if (['keterangan', 'ket'].includes(key)) {
+                htmlContent += `<td style="text-align: left;">${q.Ket || ''}</td>`;
+              } else {
+                htmlContent += `<td style="text-align: left;">${q[h] || q[key] || ''}</td>`;
+              }
+            });
+            htmlContent += `</tr>`;
+          });
+
           htmlContent += `</tbody></table>`;
         } else if (sec.type === 'text') {
           const q = sec.Questions?.[0];
