@@ -195,13 +195,13 @@ export const StudentReportDialog = ({
                     </div>
                   )}
 
-                  {(sec.type === 'table' || sec.type === 'table_text') && (() => {
+                  {sec.type === 'table_text' && (() => {
                     let headers = sec.Headers?.length ? sec.Headers : sec.headers?.length ? sec.headers : ["Pernyataan", "Nilai", "Predikat", "Keterangan"];
                     if (headers.length === 0 || headers[0]?.toLowerCase() !== "no") headers = ["No", ...headers];
 
                     return (
                       <table className="w-full border-collapse mb-5 text-xs text-black">
-                        <thead className="bg-gray-100">
+                        <thead className="bg-sky-100">
                           <tr>
                             {headers.map((h: string, hIdx: number) => (
                               <th key={hIdx} className="border border-black p-2 text-center font-bold">{h}</th>
@@ -236,6 +236,74 @@ export const StudentReportDialog = ({
                                 )}
                               </tr>
                             </Fragment>
+                          ))}
+                        </tbody>
+                      </table>
+                    );
+                  })()}
+
+                  {sec.type === 'table' && (() => {
+                    let headers = sec.Headers?.length ? sec.Headers : sec.headers?.length ? sec.headers : ["Pernyataan", "Nilai", "Predikat", "Keterangan"];
+                    if (headers.length === 0 || headers[0]?.toLowerCase() !== "no") headers = ["No", ...headers];
+
+                    const renderCell = (header: string, row: any, rowIndex: number) => {
+                      const key = header?.toLowerCase()?.trim();
+                      if (key === "no") {
+                        return (
+                          <td key={header} className="border border-black p-2 text-center w-10">
+                            {rowIndex + 1}
+                          </td>
+                        );
+                      }
+                      if (["pernyataan", "pertanyaan"].includes(key)) {
+                        return (
+                          <td key={header} className="border border-black p-2 text-left align-top">
+                            {row.Question || ""}
+                          </td>
+                        );
+                      }
+                      if (key === "nilai") {
+                        return (
+                          <td key={header} className="border border-black p-2 text-center align-middle font-bold">
+                            {row.answer || ""}
+                          </td>
+                        );
+                      }
+                      if (key === "predikat") {
+                        return (
+                          <td key={header} className="border border-black p-2 text-center align-middle font-bold">
+                            {row.predikat || ""}
+                          </td>
+                        );
+                      }
+                      if (["keterangan", "ket"].includes(key)) {
+                        return (
+                          <td key={header} className="border border-black p-2 text-left align-top">
+                            {row.Ket || ""}
+                          </td>
+                        );
+                      }
+                      return (
+                        <td key={header} className="border border-black p-2 text-left align-top">
+                          {row[header] ?? row[key] ?? ""}
+                        </td>
+                      );
+                    };
+
+                    return (
+                      <table className="w-full border-collapse mb-5 text-xs text-black">
+                        <thead className="bg-sky-100">
+                          <tr>
+                            {headers.map((h: string, hIdx: number) => (
+                              <th key={hIdx} className="border border-black p-2 text-center font-bold">{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(sectionData?.rows || []).map((row: any, rIdx: number) => (
+                            <tr key={rIdx} className="bg-slate-100">
+                              {headers.map((h: string) => renderCell(h, row, rIdx))}
+                            </tr>
                           ))}
                         </tbody>
                       </table>
@@ -303,9 +371,9 @@ export const StudentReportDialog = ({
                       <table className="w-full text-sm border-collapse min-w-[500px]">
                         <thead>
                           <tr>
-                            <th className="border p-2 text-left bg-muted">{formHeaders[0] || "Pertanyaan"}</th>
-                            <th className="border p-2 text-left bg-muted w-20">{formHeaders[1] || "Nilai"}</th>
-                            <th className="border p-2 text-left bg-muted">{formHeaders[2] || "Keterangan"}</th>
+                            <th className="border p-2 text-left bg-sky-100">{formHeaders[0] || "Pertanyaan"}</th>
+                            <th className="border p-2 text-left bg-sky-100 w-20">{formHeaders[1] || "Nilai"}</th>
+                            <th className="border p-2 text-left bg-sky-100">{formHeaders[2] || "Keterangan"}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -340,39 +408,47 @@ export const StudentReportDialog = ({
                       <table className="w-full text-sm border-collapse min-w-[600px]">
                         <thead>
                           <tr>
-                            <th className="border p-2 text-left bg-muted">{formHeaders[0] || "Aspek"}</th>
-                            {(section.Questions?.[0]?.answers || []).map((opt: string) => (
-                              <th key={opt} className="border p-1 text-center bg-muted text-xs">{opt}</th>
-                            ))}
-                            <th className="border p-2 text-left bg-muted">{formHeaders[formHeaders.length - 1] || "Keterangan"}</th>
+                            <th className="border p-2 text-center bg-sky-100">No</th>
+                            <th className="border p-2 text-left bg-sky-100">{formHeaders[0] || "Pernyataan"}</th>
+                            <th className="border p-2 text-left bg-sky-100">{formHeaders[1] || "Predikat"}</th>
+                            <th className="border p-2 text-left bg-sky-100">{formHeaders[2] || "Keterangan"}</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {(formData[sectionId]?.rows || []).map((row: any, idx: number) => (
-                            <tr key={idx}>
-                              <td className="border p-2">{row.Question}</td>
-                              {(row.answers || section.Questions?.[idx]?.answers || []).map((opt: string) => (
-                                <td key={opt} className="border p-1 text-center">
-                                  <input
-                                    type="radio"
-                                    name={`answer-${sectionId}-${idx}`}
-                                    checked={row.answer === opt}
-                                    onChange={() => !readOnly && handleTableChange(sectionId, idx, "answer", opt)}
+                          {(formData[sectionId]?.rows || []).map((row: any, idx: number) => {
+                            const options = row.answers || section.Questions?.[idx]?.answers || section.Questions?.[0]?.answers || [];
+                            return (
+                              <tr key={idx}>
+                                <td className="border p-2 text-center align-middle">{idx + 1}</td>
+                                <td className="border p-2 align-top">{row.Question}</td>
+                                <td className="border p-2 align-top">
+                                  <select
+                                    className="w-full rounded border border-slate-300 bg-white px-2 py-2 text-sm"
+                                    value={row.answer || ""}
+                                    onChange={(e) => handleTableChange(sectionId, idx, "answer", e.target.value)}
                                     disabled={readOnly}
-                                    className="w-4 h-4"
+                                  >
+                                    <option value="" disabled>
+                                      Pilih nilai
+                                    </option>
+                                    {options.map((opt: string) => (
+                                      <option key={opt} value={opt}>
+                                        {opt}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </td>
+                                <td className="border p-2 align-top">
+                                  <Textarea
+                                    className="min-h-[60px] resize-y text-xs"
+                                    value={row.Ket || ""}
+                                    onChange={(e) => handleTableChange(sectionId, idx, "Ket", e.target.value)}
+                                    readOnly={readOnly}
                                   />
                                 </td>
-                              ))}
-                              <td className="border p-1">
-                                <Textarea
-                                  className="min-h-[60px] resize-y text-xs"
-                                  value={row.Ket || ""}
-                                  onChange={(e) => handleTableChange(sectionId, idx, "Ket", e.target.value)}
-                                  readOnly={readOnly}
-                                />
-                              </td>
-                            </tr>
-                          ))}
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
