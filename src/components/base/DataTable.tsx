@@ -47,6 +47,8 @@ interface DataTableProps<T> {
   onPageChange?: (page: number) => void;
   onPageSizeChange?: (pageSize: number) => void;
   loading?: boolean;
+  defaultPageSize?: number;
+  hidePageSizeSelector?: boolean;
 }
 
 export function DataTable<T extends Record<string, any>>({
@@ -59,13 +61,15 @@ export function DataTable<T extends Record<string, any>>({
   onPageChange,
   onPageSizeChange,
   loading = false,
+  defaultPageSize = 10,
+  hidePageSizeSelector = false,
 }: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
 
   // Client-side pagination state (used when no server pagination)
   const [clientPage, setClientPage] = useState(1);
-  const [clientPageSize, setClientPageSize] = useState(10);
+  const [clientPageSize, setClientPageSize] = useState(defaultPageSize);
 
   // Get columns that are designated as select filters
   const selectFilterColumns = useMemo(() => {
@@ -321,24 +325,26 @@ export function DataTable<T extends Record<string, any>>({
 
           <div className="flex items-center gap-2">
             {/* Page size selector */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Per halaman:</span>
-              <Select
-                value={String(pageSize)}
-                onValueChange={(value) => handlePageSizeChange(Number(value))}
-              >
-                <SelectTrigger className="w-[70px] h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {pageSizeOptions.map((size) => (
-                    <SelectItem key={size} value={String(size)}>
-                      {size}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {!hidePageSizeSelector && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Per halaman:</span>
+                <Select
+                  value={String(pageSize)}
+                  onValueChange={(value) => handlePageSizeChange(Number(value))}
+                >
+                  <SelectTrigger className="w-[70px] h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pageSizeOptions.map((size) => (
+                      <SelectItem key={size} value={String(size)}>
+                        {size}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Pagination controls */}
             {totalPages > 1 && (

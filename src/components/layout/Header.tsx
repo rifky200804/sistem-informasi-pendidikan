@@ -10,11 +10,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { canAccess, getCurrentRole } from '@/lib/roles';
+import { canAccess, getCurrentRole, getCurrentUser } from '@/lib/roles';
 
 export function Header() {
   const navigate = useNavigate();
 
+  const user = getCurrentUser();
   const role = getCurrentRole();
 
   const handleLogout = () => {
@@ -30,10 +31,10 @@ export function Header() {
         <SidebarTrigger className="-ml-2" />
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="relative">
+          {/* <Button variant="ghost" size="icon" className="relative">
             <Bell className="w-5 h-5" />
             <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full" />
-          </Button>
+          </Button> */}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -43,15 +44,34 @@ export function Header() {
                 </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-popover">
-              <DropdownMenuLabel>Akun Saya</DropdownMenuLabel>
+            <DropdownMenuContent align="end" className="w-64 bg-popover p-2">
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-2 pb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-base">
+                      {user?.name ? user.name.charAt(0).toUpperCase() : <User className="w-5 h-5" />}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-semibold text-foreground leading-tight">{user?.name || "Akun Saya"}</span>
+                      <span className="text-xs text-muted-foreground capitalize font-medium">{user?.role ? user.role.replace('_', ' ') : "Role"}</span>
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator className="-mx-2" />
+                  <div className="space-y-1.5 text-xs pt-1">
+                    <div className="flex flex-col">
+                      <span className="text-muted-foreground font-medium">Email</span>
+                      <span className="text-foreground font-semibold truncate">{user?.email || "-"}</span>
+                    </div>
+                  </div>
+                </div>
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Profil</DropdownMenuItem>
+              {/* <DropdownMenuItem>Profil</DropdownMenuItem> */}
               {/* {canAccess('/settings', role) && (
                 <DropdownMenuItem onClick={() => navigate('/settings')}>Pengaturan</DropdownMenuItem>
               )} */}
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive" onClick={handleLogout}>Keluar</DropdownMenuItem>
+              <DropdownMenuItem className="text-destructive focus:bg-destructive/10" onClick={handleLogout}>Keluar</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

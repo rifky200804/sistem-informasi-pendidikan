@@ -64,7 +64,7 @@ const App = () => (
             path="/teachers"
             element={
               <MainLayout>
-                <ProtectedRoute allowedRoles={['admin', 'kepala_sekolah']}>
+                <ProtectedRoute allowedRoles={['admin']}>
                   <Teachers />
                 </ProtectedRoute>
               </MainLayout>
@@ -84,7 +84,7 @@ const App = () => (
             path="/documents"
             element={
               <MainLayout>
-                <ProtectedRoute allowedRoles={['admin', 'kepala_sekolah', 'guru']}>
+                <ProtectedRoute allowedRoles={['admin', 'kepala_sekolah']}>
                   <Documents />
                 </ProtectedRoute>
               </MainLayout>
@@ -104,7 +104,7 @@ const App = () => (
             path="/progress-reports"
             element={
               <MainLayout>
-                <ProtectedRoute allowedRoles={['admin', 'kepala_sekolah', 'guru']}>
+                <ProtectedRoute allowedRoles={['admin', 'guru']}>
                   <ProgressReports />
                 </ProtectedRoute>
               </MainLayout>
@@ -124,7 +124,7 @@ const App = () => (
             path="/report-templates"
             element={
               <MainLayout>
-                <ProtectedRoute allowedRoles={['admin', 'kepala_sekolah', 'guru']}>
+                <ProtectedRoute allowedRoles={['admin', 'kepala_sekolah']}>
                   <ReportTemplates />
                 </ProtectedRoute>
               </MainLayout>

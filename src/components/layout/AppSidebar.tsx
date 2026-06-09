@@ -64,7 +64,7 @@ export function AppSidebar() {
           {!collapsed && (
             <div>
               <h2 className="font-bold text-sidebar-foreground">SIMP</h2>
-              <p className="text-xs text-sidebar-foreground/60">Sistem Informasi Pendidikan</p>
+              <p className="text-xs text-sidebar-foreground/60">Sistem Informasi Manjaemen Pendidikan</p>
             </div>
           )}
         </div>

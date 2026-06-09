@@ -97,7 +97,12 @@ export default function Dashboard() {
             <span className="ml-2 text-muted-foreground">Memuat data...</span>
           </div>
         ) : (
-          <DataTable data={stats?.latestAnecdotes ?? []} columns={anecdoteColumns} />
+          <DataTable
+            data={stats?.latestAnecdotes ?? []}
+            columns={anecdoteColumns}
+            defaultPageSize={5}
+            hidePageSizeSelector={true}
+          />
         )}
       </Card>
     </div>

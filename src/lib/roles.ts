@@ -24,13 +24,13 @@ export const getCurrentRole = (): string => normalizeRole(getCurrentUser()?.role
 
 const routeAccess: Record<string, AppRole[]> = {
   '/': ['admin', 'kepala_sekolah', 'guru'],
-  '/teachers': ['admin', 'kepala_sekolah'],
+  '/teachers': ['admin'],
   '/students': ['admin', 'kepala_sekolah', 'guru'],
-  '/documents': ['admin', 'kepala_sekolah', 'guru'],
+  '/documents': ['admin', 'kepala_sekolah'],
   '/anecdotes': ['admin', 'kepala_sekolah', 'guru'],
-  '/progress-reports': ['admin', 'kepala_sekolah', 'guru'],
-  '/ape': ['admin', 'kepala_sekolah', 'guru'],
-  '/report-templates': ['admin', 'kepala_sekolah', 'guru'],
+  '/progress-reports': ['admin', 'guru'],
+  '/ape': ['admin', 'kepala_sekolah'],
+  '/report-templates': ['admin', 'kepala_sekolah'],
   '/soal': ['admin', 'kepala_sekolah', 'guru'],
   '/activity-logs': ['admin'],
   '/settings': ['admin'],
