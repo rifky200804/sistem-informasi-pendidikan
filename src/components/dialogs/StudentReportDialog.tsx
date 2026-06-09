@@ -38,6 +38,7 @@ export const StudentReportDialog = ({
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [tempImageSrc, setTempImageSrc] = useState("");
   const [currentSectionId, setCurrentSectionId] = useState("");
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const getSectionKey = (section: any, index: number) => section.id || section.Section || `section-${index}`;
@@ -65,10 +66,20 @@ export const StudentReportDialog = ({
           })) || [];
           initialData[sectionId] = { rows };
         } else if (section.type === "text") {
-          initialData[sectionId] = {
-            text: section.Questions?.[0]?.answer || section.Questions?.[0]?.Ket || "",
-            photos: section.Questions?.map((q: any) => q.photo).filter(Boolean) || []
-          };
+          const items = (section.Questions || []).map((q: any) => {
+            let photosArray: string[] = [];
+            if (Array.isArray(q.photos)) {
+              photosArray = q.photos;
+            } else if (q.photo) {
+              photosArray = [q.photo];
+            }
+            return {
+              Question: q.Question || "",
+              text: q.answer || q.Ket || "",
+              photos: photosArray
+            };
+          });
+          initialData[sectionId] = { items };
         }
       });
       setFormData(initialData);
@@ -99,20 +110,26 @@ export const StudentReportDialog = ({
     });
   };
 
-  const handleTextChange = (sectionId: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [sectionId]: { ...prev[sectionId], text: value },
-    }));
+  const handleTextItemChange = (sectionId: string, questionIndex: number, value: string) => {
+    setFormData((prev) => {
+      const sectionData = prev[sectionId] || { items: [] };
+      const items = [...(sectionData.items || [])];
+      if (!items[questionIndex]) {
+        items[questionIndex] = { Question: "", text: "", photos: [] };
+      }
+      items[questionIndex] = { ...items[questionIndex], text: value };
+      return { ...prev, [sectionId]: { ...sectionData, items } };
+    });
   };
 
-  const handleFileUpload = (sectionId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (sectionId: string, questionIndex: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (event) => {
         setTempImageSrc(event.target?.result as string);
         setCurrentSectionId(sectionId);
+        setCurrentQuestionIndex(questionIndex);
         setCropDialogOpen(true);
       };
       reader.readAsDataURL(file);
@@ -121,22 +138,27 @@ export const StudentReportDialog = ({
 
   const handleCropComplete = (croppedImageUrl: string) => {
     setFormData((prev) => {
-      const photos = prev[currentSectionId]?.photos || [];
-      return {
-        ...prev,
-        [currentSectionId]: { ...prev[currentSectionId], photos: [...photos, croppedImageUrl] },
-      };
+      const sectionData = prev[currentSectionId] || { items: [] };
+      const items = [...(sectionData.items || [])];
+      if (!items[currentQuestionIndex]) {
+        items[currentQuestionIndex] = { Question: "", text: "", photos: [] };
+      }
+      const photos = items[currentQuestionIndex].photos || [];
+      items[currentQuestionIndex] = { ...items[currentQuestionIndex], photos: [...photos, croppedImageUrl] };
+      return { ...prev, [currentSectionId]: { ...sectionData, items } };
     });
   };
 
-  const handleRemoveImage = (sectionId: string, index: number) => {
+  const handleRemoveImage = (sectionId: string, questionIndex: number, imageIndex: number) => {
     setFormData((prev) => {
-      const photos = [...(prev[sectionId]?.photos || [])];
-      photos.splice(index, 1);
-      return {
-        ...prev,
-        [sectionId]: { ...prev[sectionId], photos },
-      };
+      const sectionData = prev[sectionId] || { items: [] };
+      const items = [...(sectionData.items || [])];
+      if (items[questionIndex]) {
+        const photos = [...(items[questionIndex].photos || [])];
+        photos.splice(imageIndex, 1);
+        items[questionIndex] = { ...items[questionIndex], photos };
+      }
+      return { ...prev, [sectionId]: { ...sectionData, items } };
     });
   };
 
@@ -199,6 +221,43 @@ export const StudentReportDialog = ({
                     let headers = sec.Headers?.length ? sec.Headers : sec.headers?.length ? sec.headers : ["Pernyataan", "Nilai", "Predikat", "Keterangan"];
                     if (headers.length === 0 || headers[0]?.toLowerCase() !== "no") headers = ["No", ...headers];
 
+                    // colCount = number of columns excluding No
+                    const colCount = headers.filter((h: string) => h.toLowerCase().trim() !== "no").length;
+
+                    // Build value cells for second row based on positional logic
+                    const renderValueCells = (row: any) => {
+                      const cells: JSX.Element[] = [];
+                      // First cell in second row: empty (under No)
+                      // Second cell: empty (under Question/Aspek)
+                      // Then based on colCount:
+                      // 4 cols: answer, predikat, Ket
+                      // 3 cols: answer, Ket
+                      // 2 cols: Ket
+                      if (colCount >= 4) {
+                        cells.push(
+                          <td key="answer" className="border border-black p-2 text-center border-t-transparent align-middle font-bold">{row.answer || ''}</td>
+                        );
+                        cells.push(
+                          <td key="predikat" className="border border-black p-2 text-center border-t-transparent align-middle font-bold">{row.predikat || ''}</td>
+                        );
+                        cells.push(
+                          <td key="ket" className="border border-black p-2 text-left border-t-transparent align-top">{row.Ket || ''}</td>
+                        );
+                      } else if (colCount === 3) {
+                        cells.push(
+                          <td key="answer" className="border border-black p-2 text-center border-t-transparent align-middle font-bold">{row.answer || ''}</td>
+                        );
+                        cells.push(
+                          <td key="ket" className="border border-black p-2 text-left border-t-transparent align-top">{row.Ket || ''}</td>
+                        );
+                      } else if (colCount === 2) {
+                        cells.push(
+                          <td key="ket" className="border border-black p-2 text-left border-t-transparent align-top">{row.Ket || ''}</td>
+                        );
+                      }
+                      return cells;
+                    };
+
                     return (
                       <table className="w-full border-collapse mb-5 text-xs text-black">
                         <thead className="bg-sky-100">
@@ -218,22 +277,7 @@ export const StudentReportDialog = ({
                               <tr>
                                 <td className="border border-black border-t-transparent"></td>
                                 <td className="border border-black border-t-transparent"></td>
-
-                                {headers.length >= 4 && (
-                                  <td className="border border-black p-2 text-center border-t-transparent align-middle font-bold">{row.answer || ''}</td>
-                                )}
-                                {headers.length >= 5 && (
-                                  <td className="border border-black p-2 text-center border-t-transparent align-middle font-bold">{row.predikat || ''}</td>
-                                )}
-                                {headers.length > 5 && (
-                                  Array.from({ length: headers.length - 5 }).map((_, ext) => (
-                                    <td key={ext} className="border border-black p-2 text-center border-t-transparent">-</td>
-                                  ))
-                                )}
-
-                                {headers.length >= 3 && (
-                                  <td className="border border-black p-2 text-left border-t-transparent align-top">{row.Ket || ''}</td>
-                                )}
+                                {renderValueCells(row)}
                               </tr>
                             </Fragment>
                           ))}
@@ -246,7 +290,9 @@ export const StudentReportDialog = ({
                     let headers = sec.Headers?.length ? sec.Headers : sec.headers?.length ? sec.headers : ["Pernyataan", "Nilai", "Predikat", "Keterangan"];
                     if (headers.length === 0 || headers[0]?.toLowerCase() !== "no") headers = ["No", ...headers];
 
-                    const renderCell = (header: string, row: any, rowIndex: number) => {
+                    const colCount = headers.filter((h: string) => h.toLowerCase().trim() !== "no").length;
+
+                    const renderCell = (header: string, row: any, rowIndex: number, colIndex: number) => {
                       const key = header?.toLowerCase()?.trim();
                       if (key === "no") {
                         return (
@@ -255,38 +301,34 @@ export const StudentReportDialog = ({
                           </td>
                         );
                       }
-                      if (["pernyataan", "pertanyaan"].includes(key)) {
+
+                      const nonNoIndex = colIndex - (headers[0]?.toLowerCase().trim() === "no" ? 1 : 0);
+
+                      // First column after No = Question (read-only)
+                      if (nonNoIndex === 0) {
                         return (
                           <td key={header} className="border border-black p-2 text-left align-top">
                             {row.Question || ""}
                           </td>
                         );
                       }
-                      if (key === "nilai") {
-                        return (
-                          <td key={header} className="border border-black p-2 text-center align-middle font-bold">
-                            {row.answer || ""}
-                          </td>
-                        );
+
+                      // Positional: 4 cols = Question, answer, predikat, Ket
+                      // 3 cols = Question, answer, Ket
+                      // 2 cols = Question, Ket
+                      if (colCount >= 4) {
+                        if (nonNoIndex === 1) return <td key={header} className="border border-black p-2 text-center align-middle font-bold">{row.answer || ""}</td>;
+                        if (nonNoIndex === 2) return <td key={header} className="border border-black p-2 text-center align-middle font-bold">{row.predikat || ""}</td>;
+                        if (nonNoIndex === 3) return <td key={header} className="border border-black p-2 text-left align-top">{row.Ket || ""}</td>;
+                      } else if (colCount === 3) {
+                        if (nonNoIndex === 1) return <td key={header} className="border border-black p-2 text-center align-middle font-bold">{row.answer || ""}</td>;
+                        if (nonNoIndex === 2) return <td key={header} className="border border-black p-2 text-left align-top">{row.Ket || ""}</td>;
+                      } else if (colCount === 2) {
+                        if (nonNoIndex === 1) return <td key={header} className="border border-black p-2 text-left align-top">{row.Ket || ""}</td>;
                       }
-                      if (key === "predikat") {
-                        return (
-                          <td key={header} className="border border-black p-2 text-center align-middle font-bold">
-                            {row.predikat || ""}
-                          </td>
-                        );
-                      }
-                      if (["keterangan", "ket"].includes(key)) {
-                        return (
-                          <td key={header} className="border border-black p-2 text-left align-top">
-                            {row.Ket || ""}
-                          </td>
-                        );
-                      }
+
                       return (
-                        <td key={header} className="border border-black p-2 text-left align-top">
-                          {row[header] ?? row[key] ?? ""}
-                        </td>
+                        <td key={header} className="border border-black p-2 text-left align-top">-</td>
                       );
                     };
 
@@ -302,7 +344,7 @@ export const StudentReportDialog = ({
                         <tbody>
                           {(sectionData?.rows || []).map((row: any, rIdx: number) => (
                             <tr key={rIdx} className="bg-slate-100">
-                              {headers.map((h: string) => renderCell(h, row, rIdx))}
+                              {headers.map((h: string, colIdx: number) => renderCell(h, row, rIdx, colIdx))}
                             </tr>
                           ))}
                         </tbody>
@@ -311,27 +353,31 @@ export const StudentReportDialog = ({
                   })()}
 
                   {sec.type === 'text' && (
-                    <div className="relative border-2 border-sky-500 bg-sky-50 rounded-xl p-6 pt-8 mt-8 mb-4">
-                      <div className="absolute -top-[14px] left-6 bg-sky-500 text-white px-5 py-0.5 rounded-[20px] font-bold text-[13px] uppercase shadow-sm">
-                        {sec.Questions[0].Question}
-                      </div>
+                    <>
+                      {(sectionData?.items || []).map((item: any, qIdx: number) => (
+                        <div key={qIdx} className="relative border-2 border-sky-500 bg-sky-50 rounded-xl p-6 pt-8 mt-8 mb-4">
+                          <div className="absolute -top-[14px] left-6 bg-sky-500 text-white px-5 py-0.5 rounded-[20px] font-bold text-[13px] uppercase shadow-sm">
+                            {item.Question || sec.Questions?.[qIdx]?.Question || ''}
+                          </div>
 
-                      {sectionData?.text && sectionData.text.trim() !== '' && (
-                        <div className="text-[14px] whitespace-pre-wrap leading-[1.6] mb-4">
-                          {sectionData.text}
-                        </div>
-                      )}
-
-                      {sectionData?.photos && sectionData.photos.length > 0 && (
-                        <div className="flex flex-wrap gap-[15px] justify-center mt-4">
-                          {sectionData.photos.map((pf: string, pIdx: number) => (
-                            <div key={pIdx} className="w-[45%] max-w-[300px] border border-slate-200 bg-slate-50 rounded-lg p-2 flex flex-col items-center">
-                              <img src={getImageUrl(pf)} className="max-w-full max-h-[250px] object-contain rounded" alt="Dokumentasi" />
+                          {item.text && item.text.trim() !== '' && (
+                            <div className="text-[14px] whitespace-pre-wrap leading-[1.6] mb-4">
+                              {item.text}
                             </div>
-                          ))}
+                          )}
+
+                          {item.photos && item.photos.length > 0 && (
+                            <div className="flex flex-wrap gap-[15px] justify-center mt-4">
+                              {item.photos.map((pf: string, pIdx: number) => (
+                                <div key={pIdx} className="w-[45%] max-w-[300px] border border-slate-200 bg-slate-50 rounded-lg p-2 flex flex-col items-center">
+                                  <img src={getImageUrl(pf)} className="max-w-full max-h-[250px] object-contain rounded" alt="Dokumentasi" />
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      ))}
+                    </>
                   )}
                 </div>
               );
@@ -370,38 +416,105 @@ export const StudentReportDialog = ({
                     let headers = section.Headers?.length ? section.Headers : section.headers?.length ? section.headers : ["Pertanyaan", "Nilai", "Keterangan"];
                     if (headers.length === 0 || headers[0]?.toLowerCase() !== "no") headers = ["No", ...headers];
 
-                    const renderCell = (header: string, row: any, idx: number) => {
+                    // Positional logic: columns after No
+                    // colCount = number of columns excluding No
+                    const colCount = headers.filter((h: string) => h.toLowerCase().trim() !== "no").length;
+
+                    const renderCell = (header: string, row: any, idx: number, colIndex: number) => {
                       const key = header?.toLowerCase()?.trim();
                       if (key === "no") {
                         return <td key={header} className="border p-2 text-center align-middle w-12">{idx + 1}</td>;
                       }
-                      if (["pernyataan", "pertanyaan"].includes(key)) {
+
+                      // Position among non-No columns (0-based)
+                      const nonNoIndex = colIndex - (headers[0]?.toLowerCase().trim() === "no" ? 1 : 0);
+
+                      // First column after No = Question (read-only)
+                      if (nonNoIndex === 0) {
                         return <td key={header} className="border p-2 align-top">{row.Question}</td>;
                       }
-                      if (["nilai", "test"].includes(key) || key === headers[2]?.toLowerCase()?.trim()) {
-                        return (
-                          <td key={header} className="border p-1">
-                            <Textarea
-                              className="min-h-[60px] text-center resize-y text-xs"
-                              value={row.answer || ""}
-                              onChange={(e) => handleTableTextChange(sectionId, idx, "answer", e.target.value)}
-                              readOnly={readOnly}
-                            />
-                          </td>
-                        );
+
+                      // Remaining columns based on total non-No column count:
+                      // 4 cols: Question, answer, predikat, Ket
+                      // 3 cols: Question, answer, Ket
+                      // 2 cols: Question, Ket
+                      if (colCount >= 4) {
+                        if (nonNoIndex === 1) {
+                          return (
+                            <td key={header} className="border p-1">
+                              <Textarea
+                                className="min-h-[60px] text-center resize-y text-xs"
+                                value={row.answer || ""}
+                                onChange={(e) => handleTableTextChange(sectionId, idx, "answer", e.target.value)}
+                                readOnly={readOnly}
+                              />
+                            </td>
+                          );
+                        }
+                        if (nonNoIndex === 2) {
+                          return (
+                            <td key={header} className="border p-1">
+                              <Textarea
+                                className="min-h-[60px] text-center resize-y text-xs"
+                                value={row.predikat || ""}
+                                onChange={(e) => handleTableTextChange(sectionId, idx, "predikat", e.target.value)}
+                                readOnly={readOnly}
+                              />
+                            </td>
+                          );
+                        }
+                        if (nonNoIndex === 3) {
+                          return (
+                            <td key={header} className="border p-1">
+                              <Textarea
+                                className="min-h-[60px] resize-y text-xs"
+                                value={row.Ket || ""}
+                                onChange={(e) => handleTableTextChange(sectionId, idx, "Ket", e.target.value)}
+                                readOnly={readOnly}
+                              />
+                            </td>
+                          );
+                        }
+                      } else if (colCount === 3) {
+                        if (nonNoIndex === 1) {
+                          return (
+                            <td key={header} className="border p-1">
+                              <Textarea
+                                className="min-h-[60px] text-center resize-y text-xs"
+                                value={row.answer || ""}
+                                onChange={(e) => handleTableTextChange(sectionId, idx, "answer", e.target.value)}
+                                readOnly={readOnly}
+                              />
+                            </td>
+                          );
+                        }
+                        if (nonNoIndex === 2) {
+                          return (
+                            <td key={header} className="border p-1">
+                              <Textarea
+                                className="min-h-[60px] resize-y text-xs"
+                                value={row.Ket || ""}
+                                onChange={(e) => handleTableTextChange(sectionId, idx, "Ket", e.target.value)}
+                                readOnly={readOnly}
+                              />
+                            </td>
+                          );
+                        }
+                      } else if (colCount === 2) {
+                        if (nonNoIndex === 1) {
+                          return (
+                            <td key={header} className="border p-1">
+                              <Textarea
+                                className="min-h-[60px] resize-y text-xs"
+                                value={row.Ket || ""}
+                                onChange={(e) => handleTableTextChange(sectionId, idx, "Ket", e.target.value)}
+                                readOnly={readOnly}
+                              />
+                            </td>
+                          );
+                        }
                       }
-                      if (["keterangan", "ket"].includes(key)) {
-                        return (
-                          <td key={header} className="border p-1">
-                            <Textarea
-                              className="min-h-[60px] resize-y text-xs"
-                              value={row.Ket || ""}
-                              onChange={(e) => handleTableTextChange(sectionId, idx, "Ket", e.target.value)}
-                              readOnly={readOnly}
-                            />
-                          </td>
-                        );
-                      }
+
                       return <td key={header} className="border p-2">-</td>;
                     };
 
@@ -418,7 +531,7 @@ export const StudentReportDialog = ({
                           <tbody>
                             {(formData[sectionId]?.rows || []).map((row: any, idx: number) => (
                               <tr key={idx}>
-                                {headers.map((h: string) => renderCell(h, row, idx))}
+                                {headers.map((h: string, colIdx: number) => renderCell(h, row, idx, colIdx))}
                               </tr>
                             ))}
                           </tbody>
@@ -431,60 +544,114 @@ export const StudentReportDialog = ({
                     let headers = section.Headers?.length ? section.Headers : section.headers?.length ? section.headers : ["Pernyataan", "Nilai", "Predikat", "Keterangan"];
                     if (headers.length === 0 || headers[0]?.toLowerCase() !== "no") headers = ["No", ...headers];
 
-                    const renderCell = (header: string, row: any, idx: number) => {
+                    const colCount = headers.filter((h: string) => h.toLowerCase().trim() !== "no").length;
+
+                    const renderCell = (header: string, row: any, idx: number, colIndex: number) => {
                       const key = header?.toLowerCase()?.trim();
                       if (key === "no") {
                         return <td key={header} className="border p-2 text-center align-middle w-12">{idx + 1}</td>;
                       }
-                      if (["pernyataan", "pertanyaan"].includes(key)) {
+
+                      const nonNoIndex = colIndex - (headers[0]?.toLowerCase().trim() === "no" ? 1 : 0);
+
+                      // First column after No = Question (read-only)
+                      if (nonNoIndex === 0) {
                         return <td key={header} className="border p-2 align-top">{row.Question}</td>;
                       }
-                      if (["nilai", "test"].includes(key) || key === headers[2]?.toLowerCase()?.trim()) {
-                        const options = row.answers?.length > 0 ? row.answers : section.Questions?.[idx]?.answers?.length > 0 ? section.Questions[idx].answers : section.Questions?.[0]?.answers || [];
-                        return (
-                          <td key={header} className="border p-2 align-top">
-                            <select
-                              className="w-full rounded border border-slate-300 bg-white px-2 py-2 text-sm"
-                              value={row.answer || ""}
-                              onChange={(e) => handleTableChange(sectionId, idx, "answer", e.target.value)}
-                              disabled={readOnly}
-                            >
-                              <option value="" disabled>
-                                Pilih nilai
-                              </option>
-                              {options.map((opt: string) => (
-                                <option key={opt} value={opt}>
-                                  {opt}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-                        );
+
+                      // For "table" type, the answer column uses a select dropdown
+                      // 4 cols: Question, answer(select), predikat, Ket
+                      // 3 cols: Question, answer(select), Ket
+                      // 2 cols: Question, Ket
+                      if (colCount >= 4) {
+                        if (nonNoIndex === 1) {
+                          const options = row.answers?.length > 0 ? row.answers : section.Questions?.[idx]?.answers?.length > 0 ? section.Questions[idx].answers : section.Questions?.[0]?.answers || [];
+                          return (
+                            <td key={header} className="border p-2 align-top">
+                              <select
+                                className="w-full rounded border border-slate-300 bg-white px-2 py-2 text-sm"
+                                value={row.answer || ""}
+                                onChange={(e) => handleTableChange(sectionId, idx, "answer", e.target.value)}
+                                disabled={readOnly}
+                              >
+                                <option value="" disabled>Pilih nilai</option>
+                                {options.map((opt: string) => (
+                                  <option key={opt} value={opt}>{opt}</option>
+                                ))}
+                              </select>
+                            </td>
+                          );
+                        }
+                        if (nonNoIndex === 2) {
+                          return (
+                            <td key={header} className="border p-2 align-top">
+                              <Textarea
+                                className="min-h-[60px] text-center resize-y text-xs"
+                                value={row.predikat || ""}
+                                onChange={(e) => handleTableChange(sectionId, idx, "predikat", e.target.value)}
+                                readOnly={readOnly}
+                              />
+                            </td>
+                          );
+                        }
+                        if (nonNoIndex === 3) {
+                          return (
+                            <td key={header} className="border p-2 align-top">
+                              <Textarea
+                                className="min-h-[60px] resize-y text-xs"
+                                value={row.Ket || ""}
+                                onChange={(e) => handleTableChange(sectionId, idx, "Ket", e.target.value)}
+                                readOnly={readOnly}
+                              />
+                            </td>
+                          );
+                        }
+                      } else if (colCount === 3) {
+                        if (nonNoIndex === 1) {
+                          const options = row.answers?.length > 0 ? row.answers : section.Questions?.[idx]?.answers?.length > 0 ? section.Questions[idx].answers : section.Questions?.[0]?.answers || [];
+                          return (
+                            <td key={header} className="border p-2 align-top">
+                              <select
+                                className="w-full rounded border border-slate-300 bg-white px-2 py-2 text-sm"
+                                value={row.answer || ""}
+                                onChange={(e) => handleTableChange(sectionId, idx, "answer", e.target.value)}
+                                disabled={readOnly}
+                              >
+                                <option value="" disabled>Pilih nilai</option>
+                                {options.map((opt: string) => (
+                                  <option key={opt} value={opt}>{opt}</option>
+                                ))}
+                              </select>
+                            </td>
+                          );
+                        }
+                        if (nonNoIndex === 2) {
+                          return (
+                            <td key={header} className="border p-2 align-top">
+                              <Textarea
+                                className="min-h-[60px] resize-y text-xs"
+                                value={row.Ket || ""}
+                                onChange={(e) => handleTableChange(sectionId, idx, "Ket", e.target.value)}
+                                readOnly={readOnly}
+                              />
+                            </td>
+                          );
+                        }
+                      } else if (colCount === 2) {
+                        if (nonNoIndex === 1) {
+                          return (
+                            <td key={header} className="border p-2 align-top">
+                              <Textarea
+                                className="min-h-[60px] resize-y text-xs"
+                                value={row.Ket || ""}
+                                onChange={(e) => handleTableChange(sectionId, idx, "Ket", e.target.value)}
+                                readOnly={readOnly}
+                              />
+                            </td>
+                          );
+                        }
                       }
-                      if (key === "predikat") {
-                        return (
-                          <td key={header} className="border p-2 align-top">
-                            <Textarea
-                              className="min-h-[60px] text-center resize-y text-xs"
-                              value={row.predikat || ""}
-                              onChange={(e) => handleTableChange(sectionId, idx, "predikat", e.target.value)}
-                              readOnly={readOnly}
-                            />
-                          </td>
-                        );
-                      }
-                      if (["keterangan", "ket"].includes(key)) {
-                        return (
-                          <td key={header} className="border p-2 align-top">
-                            <Textarea
-                              className="min-h-[60px] resize-y text-xs"
-                              value={row.Ket || ""}
-                              onChange={(e) => handleTableChange(sectionId, idx, "Ket", e.target.value)}
-                              readOnly={readOnly}
-                            />
-                          </td>
-                        );
-                      }
+
                       return <td key={header} className="border p-2">-</td>;
                     };
 
@@ -501,7 +668,7 @@ export const StudentReportDialog = ({
                           <tbody>
                             {(formData[sectionId]?.rows || []).map((row: any, idx: number) => (
                               <tr key={idx}>
-                                {headers.map((h: string) => renderCell(h, row, idx))}
+                                {headers.map((h: string, colIdx: number) => renderCell(h, row, idx, colIdx))}
                               </tr>
                             ))}
                           </tbody>
@@ -511,74 +678,84 @@ export const StudentReportDialog = ({
                   })()}
 
                   {section.type === "text" && (
-                    <div className="flex flex-col gap-4">
-                      {/* Text Section - Top */}
-                      <div className="w-full">
-                        {section.Questions?.[0]?.Question && section.Questions[0].Question !== 'Catatan' && (
-                          <div className="text-sm font-semibold mb-2">
-                            {section.Questions[0].Question}
-                          </div>
-                        )}
-                        <Textarea
-                          placeholder="Masukkan catatan (opsional)..."
-                          value={formData[sectionId]?.text || ""}
-                          onChange={(e) => handleTextChange(sectionId, e.target.value)}
-                          readOnly={readOnly}
-                          rows={4}
-                        />
-                      </div>
+                    <div className="flex flex-col gap-6">
+                      {(formData[sectionId]?.items || section.Questions || []).map((item: any, qIdx: number) => {
+                        const questionItem = formData[sectionId]?.items?.[qIdx] || item;
+                        const questionLabel = questionItem.Question || section.Questions?.[qIdx]?.Question || '';
+                        const fileRefKey = `${sectionId}-${qIdx}`;
 
-                      {/* Image Upload Section - Bottom */}
-                      <div>
-                        {(!readOnly || (formData[sectionId]?.photos && formData[sectionId].photos.length > 0)) && (
-                          <Label className="mb-2 block text-xs font-semibold">Lampiran Gambar {readOnly ? "" : "(Maks. 4)"}</Label>
-                        )}
-                        <input
-                          type="file"
-                          ref={(el) => { fileInputRefs.current[sectionId] = el; }}
-                          accept="image/*"
-                          onChange={(e) => handleFileUpload(sectionId, e)}
-                          className="hidden"
-                          title="Upload Gambar"
-                        />
-                        <div className="flex flex-wrap gap-4">
-                          {(formData[sectionId]?.photos || []).map((photo: string, idx: number) => (
-                            <div key={idx} className="flex-shrink-0 w-[120px]">
-                              <div className="w-[120px] h-[120px] border rounded-md overflow-hidden bg-white shadow-sm flex items-center justify-center p-1">
-                                <img
-                                  src={getFileUrl(photo)}
-                                  alt={`Preview ${idx + 1}`}
-                                  className="w-full h-full object-contain"
-                                />
-                              </div>
-                              {!readOnly && (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="mt-1 w-full text-xs text-destructive hover:text-destructive"
-                                  onClick={() => handleRemoveImage(sectionId, idx)}
-                                >
-                                  <X className="w-3 h-3 mr-1" />
-                                  Hapus
-                                </Button>
+                        return (
+                          <div key={qIdx} className="flex flex-col gap-4">
+                            {/* Text Section */}
+                            <div className="w-full">
+                              {questionLabel && questionLabel !== 'Catatan' && (
+                                <div className="text-sm font-semibold mb-2">
+                                  {questionLabel}
+                                </div>
                               )}
+                              <Textarea
+                                placeholder="Masukkan catatan (opsional)..."
+                                value={questionItem.text || ""}
+                                onChange={(e) => handleTextItemChange(sectionId, qIdx, e.target.value)}
+                                readOnly={readOnly}
+                                rows={4}
+                              />
                             </div>
-                          ))}
 
-                          {!readOnly && (formData[sectionId]?.photos || []).length < 4 && (
-                            <div
-                              className="w-[120px] h-[120px] border-2 border-dashed rounded-md flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors"
-                              onClick={() => fileInputRefs.current[sectionId]?.click()}
-                            >
-                              <div className="text-center text-muted-foreground">
-                                <Upload className="w-6 h-6 mx-auto mb-1" />
-                                <span className="text-xs">Tambah</span>
+                            {/* Image Upload Section */}
+                            <div>
+                              {(!readOnly || (questionItem.photos && questionItem.photos.length > 0)) && (
+                                <Label className="mb-2 block text-xs font-semibold">Lampiran Gambar {readOnly ? "" : "(Maks. 4)"}</Label>
+                              )}
+                              <input
+                                type="file"
+                                ref={(el) => { fileInputRefs.current[fileRefKey] = el; }}
+                                accept="image/*"
+                                onChange={(e) => handleFileUpload(sectionId, qIdx, e)}
+                                className="hidden"
+                                title="Upload Gambar"
+                              />
+                              <div className="flex flex-wrap gap-4">
+                                {(questionItem.photos || []).map((photo: string, imgIdx: number) => (
+                                  <div key={imgIdx} className="flex-shrink-0 w-[120px]">
+                                    <div className="w-[120px] h-[120px] border rounded-md overflow-hidden bg-white shadow-sm flex items-center justify-center p-1">
+                                      <img
+                                        src={getFileUrl(photo)}
+                                        alt={`Preview ${imgIdx + 1}`}
+                                        className="w-full h-full object-contain"
+                                      />
+                                    </div>
+                                    {!readOnly && (
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="mt-1 w-full text-xs text-destructive hover:text-destructive"
+                                        onClick={() => handleRemoveImage(sectionId, qIdx, imgIdx)}
+                                      >
+                                        <X className="w-3 h-3 mr-1" />
+                                        Hapus
+                                      </Button>
+                                    )}
+                                  </div>
+                                ))}
+
+                                {!readOnly && (questionItem.photos || []).length < 4 && (
+                                  <div
+                                    className="w-[120px] h-[120px] border-2 border-dashed rounded-md flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors"
+                                    onClick={() => fileInputRefs.current[fileRefKey]?.click()}
+                                  >
+                                    <div className="text-center text-muted-foreground">
+                                      <Upload className="w-6 h-6 mx-auto mb-1" />
+                                      <span className="text-xs">Tambah</span>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             </div>
-                          )}
-                        </div>
-                      </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

@@ -87,23 +87,21 @@ const ProgressReports = () => {
           })) || []
         };
       } else if (backendSection.type === "text" || backendSection.type === "FREE_TEXT") {
-        const firstQuestion = backendSection.Questions?.[0];
-        let photosArray: string[] = [];
-        if (firstQuestion) {
-          if (Array.isArray(firstQuestion.photos)) {
-            photosArray = firstQuestion.photos;
-          } else if (firstQuestion.photo) {
-            photosArray = [firstQuestion.photo];
-          } else {
-            // Fallback for older data format where photos were mapped to multiple questions
-            photosArray = backendSection.Questions?.map((q: any) => q.photo).filter(Boolean) || [];
+        const items = (backendSection.Questions || []).map((q: any) => {
+          let photosArray: string[] = [];
+          if (Array.isArray(q.photos)) {
+            photosArray = q.photos;
+          } else if (q.photo) {
+            photosArray = [q.photo];
           }
-        }
+          return {
+            Question: q.Question || "",
+            text: q.Ket || q.answer || "",
+            photos: photosArray
+          };
+        });
 
-        parsedData[sectionId] = {
-          text: firstQuestion?.Ket || firstQuestion?.answer || "",
-          photos: photosArray
-        };
+        parsedData[sectionId] = { items };
       }
     });
     return parsedData;
@@ -202,13 +200,23 @@ const ProgressReports = () => {
             answers: row.answers || []
           }));
         } else if (section.type === "text" || section.type === "FREE_TEXT") {
-          const photos = formDataSection?.photos || [];
-          newQuestions = [{
-            Question: section.Questions?.[0]?.Question || "Catatan",
-            Ket: formDataSection?.text || "",
-            photos: photos,
-            answers: section.Questions?.[0]?.answers || []
-          }];
+          const items = formDataSection?.items || [];
+          if (items.length > 0) {
+            newQuestions = items.map((item: any, qIdx: number) => ({
+              Question: item.Question || section.Questions?.[qIdx]?.Question || "Catatan",
+              Ket: item.text || "",
+              photos: item.photos || [],
+              answers: section.Questions?.[qIdx]?.answers || []
+            }));
+          } else {
+            // Fallback for legacy single-question format
+            newQuestions = [{
+              Question: section.Questions?.[0]?.Question || "Catatan",
+              Ket: formDataSection?.text || "",
+              photos: formDataSection?.photos || [],
+              answers: section.Questions?.[0]?.answers || []
+            }];
+          }
         }
 
         return {
@@ -313,6 +321,9 @@ const ProgressReports = () => {
             }
           }
 
+          // colCount = number of columns excluding No
+          const colCount = headers.filter(h => h.toLowerCase().trim() !== "no").length;
+
           htmlContent += `<table class="data-table"><thead><tr>`;
           headers.forEach(h => htmlContent += `<th>${h}</th>`);
           htmlContent += `</tr></thead><tbody>`;
@@ -325,18 +336,15 @@ const ProgressReports = () => {
             htmlContent += `<tr>
                          <td style="border-top: none;"></td>
                          <td style="border-top: none;"></td>`;
-            if (headers.length >= 4) {
+            // Positional: 4 cols = Question, answer, predikat, Ket; 3 cols = Question, answer, Ket; 2 cols = Question, Ket
+            if (colCount >= 4) {
               htmlContent += `<td style="text-align: center; border-top: none; font-weight: bold; vertical-align: middle;">${q.answer || ''}</td>`;
-            }
-            if (headers.length >= 5) {
               htmlContent += `<td style="text-align: center; border-top: none; font-weight: bold; vertical-align: middle;">${q.predikat || ''}</td>`;
-            }
-            if (headers.length > 5) {
-              for (let i = 0; i < headers.length - 5; i++) {
-                htmlContent += `<td style="text-align: center; border-top: none;">-</td>`;
-              }
-            }
-            if (headers.length >= 3) {
+              htmlContent += `<td style="border-top: none; vertical-align: top;">${q.Ket || ''}</td>`;
+            } else if (colCount === 3) {
+              htmlContent += `<td style="text-align: center; border-top: none; font-weight: bold; vertical-align: middle;">${q.answer || ''}</td>`;
+              htmlContent += `<td style="border-top: none; vertical-align: top;">${q.Ket || ''}</td>`;
+            } else if (colCount === 2) {
               htmlContent += `<td style="border-top: none; vertical-align: top;">${q.Ket || ''}</td>`;
             }
             htmlContent += `</tr>`;
@@ -354,26 +362,39 @@ const ProgressReports = () => {
             }
           }
 
+          const tblColCount = headers.filter(h => h.toLowerCase().trim() !== "no").length;
+
           htmlContent += `<table class="data-table"><thead><tr>`;
           headers.forEach(h => htmlContent += `<th>${h}</th>`);
           htmlContent += `</tr></thead><tbody>`;
 
           sec.Questions.forEach((q, qIdx) => {
             htmlContent += `<tr>`;
-            headers.forEach((h) => {
+            const hasNo = headers[0]?.toLowerCase().trim() === "no";
+            headers.forEach((h, hIdx) => {
               const key = h.toLowerCase().trim();
               if (key === 'no') {
                 htmlContent += `<td style="text-align: center; width: 40px;">${qIdx + 1}</td>`;
-              } else if (['pernyataan', 'pertanyaan'].includes(key)) {
-                htmlContent += `<td style="text-align: left;">${q.Question || ''}</td>`;
-              } else if (key === 'nilai') {
-                htmlContent += `<td style="text-align: center;">${q.answer || ''}</td>`;
-              } else if (key === 'predikat') {
-                htmlContent += `<td style="text-align: center;">${q.predikat || ''}</td>`;
-              } else if (['keterangan', 'ket'].includes(key)) {
-                htmlContent += `<td style="text-align: left;">${q.Ket || ''}</td>`;
               } else {
-                htmlContent += `<td style="text-align: left;">${q[h] || q[key] || ''}</td>`;
+                const nonNoIdx = hIdx - (hasNo ? 1 : 0);
+                if (nonNoIdx === 0) {
+                  // First column after No = Question (read-only)
+                  htmlContent += `<td style="text-align: left;">${q.Question || ''}</td>`;
+                } else if (tblColCount >= 4) {
+                  if (nonNoIdx === 1) htmlContent += `<td style="text-align: center;">${q.answer || ''}</td>`;
+                  else if (nonNoIdx === 2) htmlContent += `<td style="text-align: center;">${q.predikat || ''}</td>`;
+                  else if (nonNoIdx === 3) htmlContent += `<td style="text-align: left;">${q.Ket || ''}</td>`;
+                  else htmlContent += `<td style="text-align: left;">-</td>`;
+                } else if (tblColCount === 3) {
+                  if (nonNoIdx === 1) htmlContent += `<td style="text-align: center;">${q.answer || ''}</td>`;
+                  else if (nonNoIdx === 2) htmlContent += `<td style="text-align: left;">${q.Ket || ''}</td>`;
+                  else htmlContent += `<td style="text-align: left;">-</td>`;
+                } else if (tblColCount === 2) {
+                  if (nonNoIdx === 1) htmlContent += `<td style="text-align: left;">${q.Ket || ''}</td>`;
+                  else htmlContent += `<td style="text-align: left;">-</td>`;
+                } else {
+                  htmlContent += `<td style="text-align: left;">-</td>`;
+                }
               }
             });
             htmlContent += `</tr>`;
@@ -381,34 +402,32 @@ const ProgressReports = () => {
 
           htmlContent += `</tbody></table>`;
         } else if (sec.type === 'text') {
-          const q = sec.Questions?.[0];
-          if (q) {
-            htmlContent += `<div class="section-title">${sec.Section}</div>`;
-            htmlContent += `<div class="text-section-container">`;
-            htmlContent += `<div class="text-section-badge">${q.Question}</div>`;
+          htmlContent += `<div class="section-title">${sec.Section}</div>`;
+          (sec.Questions || []).forEach((q) => {
+            if (q) {
+              htmlContent += `<div class="text-section-container">`;
+              htmlContent += `<div class="text-section-badge">${q.Question}</div>`;
 
-            // if (q.Question && q.Question !== 'Catatan') {
-            //   htmlContent += `<div style="text-align: center; font-weight: bold; margin-bottom: 15px;">${q.Question}</div>`;
-            // }
-            if (q.Ket && q.Ket.trim() !== '') {
-              htmlContent += `<div class="text-content-wrap">${q.Ket}</div>`;
-            }
+              if (q.Ket && q.Ket.trim() !== '') {
+                htmlContent += `<div class="text-content-wrap">${q.Ket}</div>`;
+              }
 
-            let photos: any[] = [];
-            if (Array.isArray(q.photos)) photos = q.photos;
-            else if (q.photo) photos = [q.photo];
+              let photos: any[] = [];
+              if (Array.isArray(q.photos)) photos = q.photos;
+              else if (q.photo) photos = [q.photo];
 
-            if (photos.length > 0) {
-              htmlContent += `<div class="photo-grid">`;
-              photos.forEach(pf => {
-                if (pf && typeof pf === 'string') {
-                  htmlContent += `<div class="photo-item"><img src="${getImageUrl(pf)}" alt="Dokumentasi" /></div>`;
-                }
-              });
+              if (photos.length > 0) {
+                htmlContent += `<div class="photo-grid">`;
+                photos.forEach(pf => {
+                  if (pf && typeof pf === 'string') {
+                    htmlContent += `<div class="photo-item"><img src="${getImageUrl(pf)}" alt="Dokumentasi" /></div>`;
+                  }
+                });
+                htmlContent += `</div>`;
+              }
               htmlContent += `</div>`;
             }
-            htmlContent += `</div>`;
-          }
+          });
         }
       });
 
