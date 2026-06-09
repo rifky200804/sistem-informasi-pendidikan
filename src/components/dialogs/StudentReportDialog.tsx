@@ -311,8 +311,8 @@ export const StudentReportDialog = ({
                   })()}
 
                   {sec.type === 'text' && (
-                    <div className="relative border-2 border-slate-400 rounded-xl p-6 pt-8 mt-8 mb-4">
-                      <div className="absolute -top-[14px] left-6 bg-slate-500 text-white px-5 py-0.5 rounded-[20px] font-bold text-[13px] uppercase shadow-sm">
+                    <div className="relative border-2 border-sky-500 bg-sky-50 rounded-xl p-6 pt-8 mt-8 mb-4">
+                      <div className="absolute -top-[14px] left-6 bg-sky-500 text-white px-5 py-0.5 rounded-[20px] font-bold text-[13px] uppercase shadow-sm">
                         {sec.Questions[0].Question}
                       </div>
 
@@ -366,93 +366,149 @@ export const StudentReportDialog = ({
                     <h3 className="font-semibold text-foreground">{section.Section}</h3>
                   </div>
 
-                  {section.type === "table_text" && (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm border-collapse min-w-[500px]">
-                        <thead>
-                          <tr>
-                            <th className="border p-2 text-left bg-sky-100">{formHeaders[0] || "Pertanyaan"}</th>
-                            <th className="border p-2 text-left bg-sky-100 w-20">{formHeaders[1] || "Nilai"}</th>
-                            <th className="border p-2 text-left bg-sky-100">{formHeaders[2] || "Keterangan"}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {(formData[sectionId]?.rows || []).map((row: any, idx: number) => (
-                            <tr key={idx}>
-                              <td className="border p-2">{row.Question}</td>
-                              <td className="border p-1">
-                                <Textarea
-                                  className="min-h-[60px] text-center resize-y text-xs"
-                                  value={row.answer || ""}
-                                  onChange={(e) => handleTableTextChange(sectionId, idx, "answer", e.target.value)}
-                                  readOnly={readOnly}
-                                />
-                              </td>
-                              <td className="border p-1">
-                                <Textarea
-                                  className="min-h-[60px] resize-y text-xs"
-                                  value={row.Ket || ""}
-                                  onChange={(e) => handleTableTextChange(sectionId, idx, "Ket", e.target.value)}
-                                  readOnly={readOnly}
-                                />
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                  {section.type === "table_text" && (() => {
+                    let headers = section.Headers?.length ? section.Headers : section.headers?.length ? section.headers : ["Pertanyaan", "Nilai", "Keterangan"];
+                    if (headers.length === 0 || headers[0]?.toLowerCase() !== "no") headers = ["No", ...headers];
 
-                  {section.type === "table" && (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm border-collapse min-w-[600px]">
-                        <thead>
-                          <tr>
-                            <th className="border p-2 text-center bg-sky-100">No</th>
-                            <th className="border p-2 text-left bg-sky-100">{formHeaders[0] || "Pernyataan"}</th>
-                            <th className="border p-2 text-left bg-sky-100">{formHeaders[1] || "Predikat"}</th>
-                            <th className="border p-2 text-left bg-sky-100">{formHeaders[2] || "Keterangan"}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {(formData[sectionId]?.rows || []).map((row: any, idx: number) => {
-                            const options = row.answers || section.Questions?.[idx]?.answers || section.Questions?.[0]?.answers || [];
-                            return (
+                    const renderCell = (header: string, row: any, idx: number) => {
+                      const key = header?.toLowerCase()?.trim();
+                      if (key === "no") {
+                        return <td key={header} className="border p-2 text-center align-middle w-12">{idx + 1}</td>;
+                      }
+                      if (["pernyataan", "pertanyaan"].includes(key)) {
+                        return <td key={header} className="border p-2 align-top">{row.Question}</td>;
+                      }
+                      if (["nilai", "test"].includes(key) || key === headers[2]?.toLowerCase()?.trim()) {
+                        return (
+                          <td key={header} className="border p-1">
+                            <Textarea
+                              className="min-h-[60px] text-center resize-y text-xs"
+                              value={row.answer || ""}
+                              onChange={(e) => handleTableTextChange(sectionId, idx, "answer", e.target.value)}
+                              readOnly={readOnly}
+                            />
+                          </td>
+                        );
+                      }
+                      if (["keterangan", "ket"].includes(key)) {
+                        return (
+                          <td key={header} className="border p-1">
+                            <Textarea
+                              className="min-h-[60px] resize-y text-xs"
+                              value={row.Ket || ""}
+                              onChange={(e) => handleTableTextChange(sectionId, idx, "Ket", e.target.value)}
+                              readOnly={readOnly}
+                            />
+                          </td>
+                        );
+                      }
+                      return <td key={header} className="border p-2">-</td>;
+                    };
+
+                    return (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm border-collapse min-w-[500px]">
+                          <thead>
+                            <tr>
+                              {headers.map((h: string, hIdx: number) => (
+                                <th key={hIdx} className="border p-2 text-center bg-sky-100">{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(formData[sectionId]?.rows || []).map((row: any, idx: number) => (
                               <tr key={idx}>
-                                <td className="border p-2 text-center align-middle">{idx + 1}</td>
-                                <td className="border p-2 align-top">{row.Question}</td>
-                                <td className="border p-2 align-top">
-                                  <select
-                                    className="w-full rounded border border-slate-300 bg-white px-2 py-2 text-sm"
-                                    value={row.answer || ""}
-                                    onChange={(e) => handleTableChange(sectionId, idx, "answer", e.target.value)}
-                                    disabled={readOnly}
-                                  >
-                                    <option value="" disabled>
-                                      Pilih nilai
-                                    </option>
-                                    {options.map((opt: string) => (
-                                      <option key={opt} value={opt}>
-                                        {opt}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </td>
-                                <td className="border p-2 align-top">
-                                  <Textarea
-                                    className="min-h-[60px] resize-y text-xs"
-                                    value={row.Ket || ""}
-                                    onChange={(e) => handleTableChange(sectionId, idx, "Ket", e.target.value)}
-                                    readOnly={readOnly}
-                                  />
-                                </td>
+                                {headers.map((h: string) => renderCell(h, row, idx))}
                               </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })()}
+
+                  {section.type === "table" && (() => {
+                    let headers = section.Headers?.length ? section.Headers : section.headers?.length ? section.headers : ["Pernyataan", "Nilai", "Predikat", "Keterangan"];
+                    if (headers.length === 0 || headers[0]?.toLowerCase() !== "no") headers = ["No", ...headers];
+
+                    const renderCell = (header: string, row: any, idx: number) => {
+                      const key = header?.toLowerCase()?.trim();
+                      if (key === "no") {
+                        return <td key={header} className="border p-2 text-center align-middle w-12">{idx + 1}</td>;
+                      }
+                      if (["pernyataan", "pertanyaan"].includes(key)) {
+                        return <td key={header} className="border p-2 align-top">{row.Question}</td>;
+                      }
+                      if (["nilai", "test"].includes(key) || key === headers[2]?.toLowerCase()?.trim()) {
+                        const options = row.answers?.length > 0 ? row.answers : section.Questions?.[idx]?.answers?.length > 0 ? section.Questions[idx].answers : section.Questions?.[0]?.answers || [];
+                        return (
+                          <td key={header} className="border p-2 align-top">
+                            <select
+                              className="w-full rounded border border-slate-300 bg-white px-2 py-2 text-sm"
+                              value={row.answer || ""}
+                              onChange={(e) => handleTableChange(sectionId, idx, "answer", e.target.value)}
+                              disabled={readOnly}
+                            >
+                              <option value="" disabled>
+                                Pilih nilai
+                              </option>
+                              {options.map((opt: string) => (
+                                <option key={opt} value={opt}>
+                                  {opt}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                        );
+                      }
+                      if (key === "predikat") {
+                        return (
+                          <td key={header} className="border p-2 align-top">
+                            <Textarea
+                              className="min-h-[60px] text-center resize-y text-xs"
+                              value={row.predikat || ""}
+                              onChange={(e) => handleTableChange(sectionId, idx, "predikat", e.target.value)}
+                              readOnly={readOnly}
+                            />
+                          </td>
+                        );
+                      }
+                      if (["keterangan", "ket"].includes(key)) {
+                        return (
+                          <td key={header} className="border p-2 align-top">
+                            <Textarea
+                              className="min-h-[60px] resize-y text-xs"
+                              value={row.Ket || ""}
+                              onChange={(e) => handleTableChange(sectionId, idx, "Ket", e.target.value)}
+                              readOnly={readOnly}
+                            />
+                          </td>
+                        );
+                      }
+                      return <td key={header} className="border p-2">-</td>;
+                    };
+
+                    return (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm border-collapse min-w-[600px]">
+                          <thead>
+                            <tr>
+                              {headers.map((h: string, hIdx: number) => (
+                                <th key={hIdx} className="border p-2 text-center bg-sky-100">{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(formData[sectionId]?.rows || []).map((row: any, idx: number) => (
+                              <tr key={idx}>
+                                {headers.map((h: string) => renderCell(h, row, idx))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })()}
 
                   {section.type === "text" && (
                     <div className="flex flex-col gap-4">

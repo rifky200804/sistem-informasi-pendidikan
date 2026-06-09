@@ -24,6 +24,7 @@ import {
   SidebarHeader,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { canAccess, getCurrentRole } from '@/lib/roles';
 
 const menuItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
@@ -36,19 +37,22 @@ const menuItems = [
   { title: 'Template Rapor', url: '/report-templates', icon: FileEdit },
   { title: 'Soal', url: '/soal', icon: HelpCircle },
   { title: 'Log Aktivitas', url: '/activity-logs', icon: Activity },
-  { title: 'Pengaturan', url: '/settings', icon: Settings },
+  // { title: 'Pengaturan', url: '/settings', icon: Settings },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
   const collapsed = state === 'collapsed';
+  const role = getCurrentRole();
 
   const isActive = (path: string) => location.pathname === path;
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive
       ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
       : 'hover:bg-sidebar-accent/50';
+
+  const visibleMenuItems = menuItems.filter((item) => canAccess(item.url, role));
 
   return (
     <Sidebar className={collapsed ? 'w-14' : 'w-64'}>
@@ -71,7 +75,7 @@ export function AppSidebar() {
           <SidebarGroupLabel className="px-4">Menu Utama</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {visibleMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} end className={getNavCls}>

@@ -122,7 +122,8 @@ const ProgressReports = () => {
       const activeTemplateData = templates[0]?.data || [];
       detail.data.forEach((sec: any) => {
         const tSec = activeTemplateData.find((t: any) => t.Section === sec.Section);
-        if (tSec && (tSec.Headers || tSec.headers)) {
+        if (tSec) {
+          sec.type = tSec.type;
           sec.Headers = tSec.Headers || tSec.headers;
         }
       });
@@ -273,8 +274,8 @@ const ProgressReports = () => {
                       table.data-table th, table.data-table td { border: 1px solid #000; padding: 8px; }
                       table.data-table th { background-color: #dbeafe; color: #1e40af; text-align: center; }
                       .text-catatan { border: 1px solid #000; padding: 15px; margin-bottom: 15px; min-height: 100px; font-size: 14px; white-space: pre-wrap; page-break-inside: avoid; break-inside: avoid; }
-                      .text-section-container { border: 2px solid #94a3b8; border-radius: 12px; position: relative; padding: 25px 20px 20px; margin-top: 30px; margin-bottom: 20px; page-break-inside: avoid; break-inside: avoid; }
-                      .text-section-badge { position: absolute; top: -14px; left: 30px; background-color: #64748b; color: white; padding: 4px 20px; border-radius: 20px; font-weight: bold; font-size: 13px; text-transform: uppercase; }
+                      .text-section-container { border: 2px solid #0ea5e9; background-color: #f0f9ff; border-radius: 12px; position: relative; padding: 25px 20px 20px; margin-top: 30px; margin-bottom: 20px; page-break-inside: avoid; break-inside: avoid; }
+                      .text-section-badge { position: absolute; top: -14px; left: 30px; background-color: #0ea5e9; color: white; padding: 4px 20px; border-radius: 20px; font-weight: bold; font-size: 13px; text-transform: uppercase; }
                       .text-content-wrap { font-size: 14px; white-space: pre-wrap; line-height: 1.6; margin-bottom: 15px; }
                       .photo-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin-top: 15px; }
                       .photo-item { width: 45%; max-width: 300px; padding: 5px; text-align: center; page-break-inside: avoid; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; }

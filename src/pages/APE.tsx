@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Package, Edit, Trash2, Eye, X } from "lucide-react";
+import { Plus, Package, Edit, Trash2, Eye, X, Download } from "lucide-react";
 import { DataTable, Column } from "@/components/base/DataTable";
 import { Badge } from "@/components/ui/badge";
 import { APEForm } from "@/components/forms/APEForm";
@@ -168,7 +168,7 @@ const APE = () => {
 
       {/* Image Preview Lightbox */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="max-w-3xl p-1 bg-transparent border-none shadow-none flex items-center justify-center">
+        <DialogContent hideClose className="max-w-3xl p-1 bg-transparent border-none shadow-none flex items-center justify-center">
           {previewImage && (
             <div className="relative group">
               <img 
@@ -181,9 +181,19 @@ const APE = () => {
                 size="icon"
                 className="absolute -top-4 -right-4 bg-background rounded-full p-2 h-10 w-10 shadow-lg"
                 onClick={() => setIsPreviewOpen(false)}
+                title="Tutup"
               >
                 <X className="w-5 h-5" />
               </Button>
+              <a
+                href={previewImage}
+                download="ape_image.jpg"
+                target="_blank"
+                className="absolute -top-4 right-8 bg-background rounded-full border border-input shadow-lg hover:bg-accent hover:text-accent-foreground h-10 w-10 flex items-center justify-center transition-colors"
+                title="Download Gambar"
+              >
+                <Download className="w-5 h-5" />
+              </a>
             </div>
           )}
         </DialogContent>

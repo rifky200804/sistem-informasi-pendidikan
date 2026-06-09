@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, User, Image as ImageIcon, X } from "lucide-react";
+import { Calendar, User, Image as ImageIcon, X, Download } from "lucide-react";
 import { getFileUrl } from "@/lib/fileUrl";
 import { useState } from "react";
 
@@ -86,7 +86,7 @@ export const AnecdoteDetailDialog = ({
 
           {/* Full Image Preview Dialog */}
           <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-            <DialogContent className="max-w-4xl p-1 bg-transparent border-none shadow-none flex items-center justify-center">
+            <DialogContent hideClose className="max-w-4xl p-1 bg-transparent border-none shadow-none flex items-center justify-center">
               <div className="relative group">
                 <img 
                   src={finalImageUrl} 
@@ -96,9 +96,19 @@ export const AnecdoteDetailDialog = ({
                 <button 
                   onClick={() => setIsPreviewOpen(false)}
                   className="absolute -top-4 -right-4 bg-background rounded-full p-2 shadow-lg hover:bg-muted transition-colors"
+                  title="Tutup"
                 >
                   <X className="w-5 h-5" />
                 </button>
+                <a 
+                  href={finalImageUrl}
+                  download={`anecdote_${anecdote.id || 'image'}.jpg`}
+                  target="_blank"
+                  className="absolute -top-4 right-8 bg-background rounded-full p-2 shadow-lg hover:bg-muted transition-colors flex items-center justify-center"
+                  title="Download Gambar"
+                >
+                  <Download className="w-5 h-5" />
+                </a>
               </div>
             </DialogContent>
           </Dialog>

@@ -1,8 +1,9 @@
+import type { ReactNode } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { MainLayout } from "./components/layout/MainLayout";
 import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
@@ -17,8 +18,29 @@ import ReportTemplates from "./pages/ReportTemplates";
 import Soal from "./pages/Soal";
 import ActivityLogs from "./pages/ActivityLogs";
 import NotFound from "./pages/NotFound";
+import { canAccess, getCurrentRole } from '@/lib/roles';
 
 const queryClient = new QueryClient();
+
+const ProtectedRoute = ({
+  allowedRoles,
+  children,
+}: {
+  allowedRoles: string[];
+  children: ReactNode;
+}) => {
+  const role = getCurrentRole();
+
+  if (!role) {
+    return <Navigate to="/auth/login" replace />;
+  }
+
+  if (!allowedRoles.includes(role)) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -28,17 +50,116 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/auth/login" element={<Login />} />
-          <Route path="/" element={<MainLayout><Dashboard /></MainLayout>} />
-          <Route path="/teachers" element={<MainLayout><Teachers /></MainLayout>} />
-          <Route path="/students" element={<MainLayout><Students /></MainLayout>} />
-          <Route path="/documents" element={<MainLayout><Documents /></MainLayout>} />
-          <Route path="/anecdotes" element={<MainLayout><Anecdotes /></MainLayout>} />
-          <Route path="/progress-reports" element={<MainLayout><ProgressReports /></MainLayout>} />
-          <Route path="/ape" element={<MainLayout><APE /></MainLayout>} />
-          <Route path="/report-templates" element={<MainLayout><ReportTemplates /></MainLayout>} />
-          <Route path="/soal" element={<MainLayout><Soal /></MainLayout>} />
-          <Route path="/activity-logs" element={<MainLayout><ActivityLogs /></MainLayout>} />
-          <Route path="/settings" element={<MainLayout><Settings /></MainLayout>} />
+          <Route
+            path="/"
+            element={
+              <MainLayout>
+                <ProtectedRoute allowedRoles={['admin', 'kepala_sekolah', 'guru']}>
+                  <Dashboard />
+                </ProtectedRoute>
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/teachers"
+            element={
+              <MainLayout>
+                <ProtectedRoute allowedRoles={['admin', 'kepala_sekolah']}>
+                  <Teachers />
+                </ProtectedRoute>
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/students"
+            element={
+              <MainLayout>
+                <ProtectedRoute allowedRoles={['admin', 'kepala_sekolah', 'guru']}>
+                  <Students />
+                </ProtectedRoute>
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/documents"
+            element={
+              <MainLayout>
+                <ProtectedRoute allowedRoles={['admin', 'kepala_sekolah', 'guru']}>
+                  <Documents />
+                </ProtectedRoute>
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/anecdotes"
+            element={
+              <MainLayout>
+                <ProtectedRoute allowedRoles={['admin', 'kepala_sekolah', 'guru']}>
+                  <Anecdotes />
+                </ProtectedRoute>
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/progress-reports"
+            element={
+              <MainLayout>
+                <ProtectedRoute allowedRoles={['admin', 'kepala_sekolah', 'guru']}>
+                  <ProgressReports />
+                </ProtectedRoute>
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/ape"
+            element={
+              <MainLayout>
+                <ProtectedRoute allowedRoles={['admin', 'kepala_sekolah', 'guru']}>
+                  <APE />
+                </ProtectedRoute>
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/report-templates"
+            element={
+              <MainLayout>
+                <ProtectedRoute allowedRoles={['admin', 'kepala_sekolah', 'guru']}>
+                  <ReportTemplates />
+                </ProtectedRoute>
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/soal"
+            element={
+              <MainLayout>
+                <ProtectedRoute allowedRoles={['admin', 'kepala_sekolah', 'guru']}>
+                  <Soal />
+                </ProtectedRoute>
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/activity-logs"
+            element={
+              <MainLayout>
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <ActivityLogs />
+                </ProtectedRoute>
+              </MainLayout>
+            }
+          />
+          {/* <Route
+            path="/settings"
+            element={
+              <MainLayout>
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <Settings />
+                </ProtectedRoute>
+              </MainLayout>
+            }
+          /> */}
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

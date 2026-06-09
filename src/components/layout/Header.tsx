@@ -10,12 +10,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { canAccess, getCurrentRole } from '@/lib/roles';
 
 export function Header() {
   const navigate = useNavigate();
 
+  const role = getCurrentRole();
+
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
     navigate('/auth/login');
   };
 
@@ -42,7 +47,9 @@ export function Header() {
               <DropdownMenuLabel>Akun Saya</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem>Profil</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/settings')}>Pengaturan</DropdownMenuItem>
+              {/* {canAccess('/settings', role) && (
+                <DropdownMenuItem onClick={() => navigate('/settings')}>Pengaturan</DropdownMenuItem>
+              )} */}
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive" onClick={handleLogout}>Keluar</DropdownMenuItem>
             </DropdownMenuContent>
