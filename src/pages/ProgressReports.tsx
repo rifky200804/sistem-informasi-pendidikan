@@ -252,16 +252,63 @@ const ProgressReports = () => {
   };
 
   const handleDownloadPDF = async (item: ProgressReportListItem) => {
+    // Buka window segera untuk menghindari popup blocker di mobile
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error("Pop-up diblokir. Harap izinkan pop-up untuk mencetak PDF.");
+      return;
+    }
+
+    // Tulis halaman loading sementara
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Memproses Rapor...</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              height: 100vh;
+              margin: 0;
+              background-color: #f8fafc;
+              color: #334155;
+            }
+            .spinner {
+              border: 4px solid #f3f3f3;
+              border-top: 4px solid #0ea5e9;
+              border-radius: 50%;
+              width: 40px;
+              height: 40px;
+              animation: spin 1s linear infinite;
+              margin-bottom: 16px;
+            }
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="spinner"></div>
+          <div>Memproses PDF Rapor... Silakan tunggu.</div>
+        </body>
+      </html>
+    `);
+
     try {
       toast.info("Memproses PDF rapor...");
       const detail = await progressReportService.getById(item.id.toString());
       if (!detail) {
+        printWindow.close();
         toast.error("Gagal mendapatkan detail rapor.");
         return;
       }
       const templates = await reportTemplateService.getAll();
       const activeData = templates[0]?.data || [];
-      const VITE_API_URL = import.meta.env.VITE_API_URL || "http://192.168.1.184:3000/api";
+      const VITE_API_URL = import.meta.env.VITE_API_URL || "";
       const getImageUrl = (path: string) => path && !path.startsWith('data:') && !path.startsWith('http') ? `${VITE_API_URL}/reports/images/${path}` : path;
 
       let htmlContent = `
@@ -441,15 +488,12 @@ const ProgressReports = () => {
                   </script>
                 </html>`;
 
-      const printWindow = window.open('', '', 'height=800,width=800');
-      if (!printWindow) {
-        toast.error("Pop-up diblokir. Harap izinkan pop-up untuk mencetak PDF.");
-        return;
-      }
-
+      // Bersihkan indikator loading dan tulis HTML konten rapor
+      printWindow.document.open();
       printWindow.document.write(htmlContent);
       printWindow.document.close();
     } catch (e) {
+      printWindow.close();
       toast.error("Gagal memproses PDF rapor. Pastikan server terhubung.");
       console.error(e);
     }
@@ -534,6 +578,7 @@ const ProgressReports = () => {
           reportData={reportDialogData}
           report={selectedReportRow}
           onSave={handleSave}
+          onDownload={handleDownloadPDF}
           readOnly={isReadOnly}
           isNew={selectedReportRow?.id === 0}
         />

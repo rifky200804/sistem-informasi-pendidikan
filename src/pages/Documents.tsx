@@ -9,11 +9,14 @@ import { DocumentUploadForm } from "@/components/forms/DocumentUploadForm";
 import { DeleteConfirmDialog } from "@/components/dialogs/DeleteConfirmDialog";
 import { useDocuments } from "@/hooks/useDocuments";
 import { Document as DocumentType } from "@/services/documentService";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 const Documents = () => {
   const [uploadFormOpen, setUploadFormOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<DocumentType | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState<DocumentType | null>(null);
   const { documents, pagination, page, pageSize, setPage, setPageSize, loading, uploadDocument, deleteDocument, downloadDocument } = useDocuments();
 
   const handleUpload = async (data: any) => {
@@ -39,8 +42,9 @@ const Documents = () => {
 
   const handlePreview = (doc: any) => {
     const fullDocument = documents.find(d => d.id === doc.id);
-    if (fullDocument && fullDocument.filePath) {
-      window.open(getFileUrl(fullDocument.filePath), '_blank');
+    if (fullDocument) {
+      setPreviewDoc(fullDocument);
+      setPreviewOpen(true);
     }
   };
 
@@ -139,6 +143,82 @@ const Documents = () => {
         title="Hapus Dokumen"
         description={`Apakah Anda yakin ingin menghapus dokumen "${selectedDocument?.title}"?`}
       />
+
+      {/* Dialog Preview Dokumen */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-4xl w-[95vw] sm:w-[90vw] h-[90vh] sm:h-[85vh] flex flex-col p-3 sm:p-6">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle>{previewDoc?.title || "Pratinjau Dokumen"}</DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-hidden border rounded bg-slate-50 min-h-0 flex flex-col">
+            {previewDoc ? (
+              (() => {
+                const baseUrl = (import.meta.env.VITE_API_URL || "").replace(/\/api\/?$/, "");
+                const filePath = previewDoc.filePath || "";
+                const fileUrl = filePath.startsWith("http") ? filePath : `${baseUrl}${filePath.startsWith("/") ? "" : "/"}${filePath}`;
+                const extension = filePath.split('.').pop()?.toLowerCase() || '';
+                
+                if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) {
+                  return (
+                    <div className="flex-1 flex items-center justify-center p-4 min-h-0 overflow-auto">
+                      <img 
+                        src={fileUrl} 
+                        alt={previewDoc.title} 
+                        className="max-w-full max-h-full object-contain rounded shadow-md"
+                      />
+                    </div>
+                  );
+                } else if (extension === 'pdf') {
+                  return (
+                    <iframe 
+                      src={`${fileUrl}#toolbar=0`} 
+                      className="w-full h-full border-0 rounded flex-1 min-h-0" 
+                      title={previewDoc.title}
+                    />
+                  );
+                } else {
+                  return (
+                    <div className="flex-1 flex items-center justify-center p-4 min-h-0 overflow-auto">
+                      <div className="text-center space-y-4">
+                        <FileText className="w-16 h-16 mx-auto text-muted-foreground" />
+                        <div>
+                          <p className="font-semibold text-lg">Pratinjau tidak tersedia untuk format ini</p>
+                          <p className="text-sm text-muted-foreground mb-4">Silakan unduh dokumen untuk melihat isi file.</p>
+                          <Button onClick={() => handleDownload(previewDoc)}>
+                            <Download className="w-4 h-4 mr-2" />
+                            Unduh Dokumen
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+              })()
+            ) : null}
+          </div>
+
+          <DialogFooter className="flex-shrink-0 flex justify-end gap-2 pt-4 border-t mt-4">
+            <Button variant="outline" onClick={() => setPreviewOpen(false)}>
+              Tutup
+            </Button>
+            {previewDoc && (
+              <Button 
+                onClick={() => {
+                  if (previewDoc.filePath) {
+                    const baseUrl = (import.meta.env.VITE_API_URL || "").replace(/\/api\/?$/, "");
+                    const filePath = previewDoc.filePath;
+                    const fileUrl = filePath.startsWith("http") ? filePath : `${baseUrl}${filePath.startsWith("/") ? "" : "/"}${filePath}`;
+                    window.open(fileUrl, '_blank');
+                  }
+                }}
+              >
+                Buka di Tab Baru
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

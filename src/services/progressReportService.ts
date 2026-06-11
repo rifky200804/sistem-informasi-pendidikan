@@ -101,7 +101,7 @@ async function buildReportFormData(data: any): Promise<FormData> {
                if (file) fd.append(`data[${i}][Questions][${j}][photo]`, file);
              } else {
                try {
-                 const VITE_API_URL = import.meta.env.VITE_API_URL || "http://192.168.1.184:3000/api";
+                 const VITE_API_URL = import.meta.env.VITE_API_URL || "";
                  const fetchUrl = q.photo.startsWith('http') ? q.photo : `${VITE_API_URL.replace(/\/api$/, '')}${q.photo.startsWith('/') ? '' : '/'}${q.photo}`;
                  const res = await fetch(fetchUrl);
                  if (!res.ok) throw new Error();
@@ -121,7 +121,7 @@ async function buildReportFormData(data: any): Promise<FormData> {
                  if (file) fd.append(`data[${i}][Questions][${j}][photos][]`, file);
                } else {
                  try {
-                   const VITE_API_URL = import.meta.env.VITE_API_URL || "http://192.168.1.184:3000/api";
+                   const VITE_API_URL = import.meta.env.VITE_API_URL || "";
                    const fetchUrl = photoUrl.startsWith('http') ? photoUrl : `${VITE_API_URL.replace(/\/api$/, '')}${photoUrl.startsWith('/') ? '' : '/'}${photoUrl}`;
                    const res = await fetch(fetchUrl);
                    if (!res.ok) throw new Error();

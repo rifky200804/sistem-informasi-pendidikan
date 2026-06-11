@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Section, Question } from "@/types/reportTemplate";
-import { Save, Upload, X } from "lucide-react";
+import { Save, Upload, X, Download } from "lucide-react";
 import { ImageCropDialog } from "@/components/dialogs/ImageCropDialog";
 import { getFileUrl } from "@/lib/fileUrl";
 
@@ -18,6 +18,7 @@ interface StudentReportDialogProps {
   reportData?: Record<string, any>;
   report?: any;
   onSave?: (data: Record<string, any>) => void;
+  onDownload?: (report: any) => void;
   readOnly?: boolean;
   isNew?: boolean;
 }
@@ -31,6 +32,7 @@ export const StudentReportDialog = ({
   reportData,
   report,
   onSave,
+  onDownload,
   readOnly = false,
   isNew = false,
 }: StudentReportDialogProps) => {
@@ -166,15 +168,17 @@ export const StudentReportDialog = ({
     onSave?.(formData);
   };
 
-  const VITE_API_URL = import.meta.env.VITE_API_URL || "http://192.168.1.184:3000/api";
+  const VITE_API_URL = import.meta.env.VITE_API_URL || "";
   const getImageUrl = (path: string) => path && !path.startsWith('data:') && !path.startsWith('http') ? `${VITE_API_URL}/reports/images/${path}` : path;
 
   if (readOnly) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-5xl w-[90vw] md:w-[80vw] h-[90vh] overflow-y-auto bg-slate-100 p-4 flex flex-col items-center custom-scrollbar">
+        <DialogContent className="max-w-5xl w-[95vw] md:w-[80vw] h-[90vh] flex flex-col bg-slate-100 p-0 overflow-hidden custom-scrollbar">
           <DialogTitle className="sr-only">Pratinjau Rapor</DialogTitle>
-          <div className="w-[210mm] min-h-[297mm] h-fit bg-white border border-slate-200 shadow-xl p-[20mm] relative text-black shrink-0">
+          <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center">
+            <div className="w-full flex justify-start md:justify-center overflow-x-auto py-2 min-w-0">
+              <div className="w-[210mm] min-h-[297mm] h-fit bg-white border border-slate-200 shadow-xl p-[20mm] relative text-black shrink-0">
             <div className="text-center font-bold text-2xl mb-5 border-b-2 border-black pb-2.5">
               {templateName?.toUpperCase() || ''}
             </div>
@@ -382,7 +386,20 @@ export const StudentReportDialog = ({
                 </div>
               );
             })}
+              </div>
+            </div>
           </div>
+          <DialogFooter className="bg-white border-t p-4 flex flex-col-reverse sm:flex-row gap-2 sm:gap-4 justify-end w-full">
+            <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
+              Tutup
+            </Button>
+            {onDownload && report && (
+              <Button onClick={() => onDownload(report)} className="w-full sm:w-auto">
+                <Download className="w-4 h-4 mr-2" />
+                Cetak / Download PDF
+              </Button>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     );
