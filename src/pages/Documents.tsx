@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, Download, Calendar, Trash2, Eye } from "lucide-react";
+import { Upload, FileText, Download, Calendar, Trash2, Eye, Edit } from "lucide-react";
 import { DataTable, Column } from "@/components/base/DataTable";
 import { Badge } from "@/components/ui/badge";
 import { getFileUrl } from "@/lib/fileUrl";
 import { DocumentUploadForm } from "@/components/forms/DocumentUploadForm";
+import { DocumentEditForm } from "@/components/forms/DocumentEditForm";
 import { DeleteConfirmDialog } from "@/components/dialogs/DeleteConfirmDialog";
 import { useDocuments } from "@/hooks/useDocuments";
 import { Document as DocumentType } from "@/services/documentService";
@@ -13,15 +14,32 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 
 const Documents = () => {
   const [uploadFormOpen, setUploadFormOpen] = useState(false);
+  const [editFormOpen, setEditFormOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<DocumentType | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<DocumentType | null>(null);
-  const { documents, pagination, page, pageSize, setPage, setPageSize, loading, uploadDocument, deleteDocument, downloadDocument } = useDocuments();
+  const { documents, pagination, page, pageSize, setPage, setPageSize, loading, uploadDocument, updateDocument, deleteDocument, downloadDocument } = useDocuments();
 
   const handleUpload = async (data: any) => {
     await uploadDocument(data);
     setUploadFormOpen(false);
+  };
+
+  const handleEditClick = (doc: any) => {
+    const fullDocument = documents.find(d => d.id === doc.id);
+    if (fullDocument) {
+      setSelectedDocument(fullDocument);
+      setEditFormOpen(true);
+    }
+  };
+
+  const handleUpdate = async (data: any) => {
+    if (selectedDocument) {
+      await updateDocument(selectedDocument.id, data);
+      setEditFormOpen(false);
+      setSelectedDocument(null);
+    }
   };
 
   const handleDeleteClick = (doc: any) => {
@@ -94,6 +112,9 @@ const Documents = () => {
           <Button variant="ghost" size="sm" onClick={() => handleDownload(item)} title="Download">
             <Download className="w-4 h-4" />
           </Button>
+          <Button variant="ghost" size="sm" onClick={() => handleEditClick(item)} title="Edit">
+            <Edit className="w-4 h-4 text-amber-500" />
+          </Button>
           <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(item)} title="Hapus">
             <Trash2 className="w-4 h-4 text-destructive" />
           </Button>
@@ -134,6 +155,16 @@ const Documents = () => {
         open={uploadFormOpen}
         onOpenChange={setUploadFormOpen}
         onSubmit={handleUpload}
+      />
+
+      <DocumentEditForm
+        open={editFormOpen}
+        onOpenChange={(open) => {
+          setEditFormOpen(open);
+          if (!open) setSelectedDocument(null);
+        }}
+        onSubmit={handleUpdate}
+        document={selectedDocument}
       />
 
       <DeleteConfirmDialog

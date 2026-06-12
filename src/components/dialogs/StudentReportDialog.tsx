@@ -168,8 +168,7 @@ export const StudentReportDialog = ({
     onSave?.(formData);
   };
 
-  const VITE_API_URL = import.meta.env.VITE_API_URL || "";
-  const getImageUrl = (path: string) => path && !path.startsWith('data:') && !path.startsWith('http') ? `${VITE_API_URL}/reports/images/${path}` : path;
+  const getImageUrl = (path: string) => getFileUrl(path);
 
   if (readOnly) {
     return (

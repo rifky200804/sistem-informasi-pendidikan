@@ -10,6 +10,7 @@ import { DeleteConfirmDialog } from "@/components/dialogs/DeleteConfirmDialog";
 import { progressReportService, ProgressReportListItem, CreateProgressReportData } from "@/services/progressReportService";
 import { reportTemplateService } from "@/services/reportTemplateService";
 import { Section } from "@/types/reportTemplate";
+import { getFileUrl } from "@/lib/fileUrl";
 import { toast } from "sonner";
 
 const ProgressReports = () => {
@@ -308,8 +309,7 @@ const ProgressReports = () => {
       }
       const templates = await reportTemplateService.getAll();
       const activeData = templates[0]?.data || [];
-      const VITE_API_URL = import.meta.env.VITE_API_URL || "";
-      const getImageUrl = (path: string) => path && !path.startsWith('data:') && !path.startsWith('http') ? `${VITE_API_URL}/reports/images/${path}` : path;
+      const getImageUrl = (path: string) => getFileUrl(path);
 
       let htmlContent = `
                 <html>

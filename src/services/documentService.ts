@@ -26,7 +26,8 @@ export interface CreateDocumentData {
 
 export interface UpdateDocumentData {
   title?: string;
-  type?: 'rapor' | 'laporan' | 'sertifikat' | 'lainnya';
+  type?: string;
+  category?: string;
   studentId?: string;
 }
 
