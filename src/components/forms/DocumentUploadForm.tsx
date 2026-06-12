@@ -14,8 +14,8 @@ interface DocumentUploadFormProps {
 
 export const DocumentUploadForm = ({ open, onOpenChange, onSubmit }: DocumentUploadFormProps) => {
   const [title, setTitle] = useState("");
-  const [type, setType] = useState("");
   const [category, setCategory] = useState("");
+  const [documentDate, setDocumentDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [file, setFile] = useState<File | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -25,12 +25,12 @@ export const DocumentUploadForm = ({ open, onOpenChange, onSubmit }: DocumentUpl
   };
 
   const handleSubmit = () => {
-    if (!file) return;
+    if (!file || !title || !category || !documentDate) return;
 
     onSubmit({
       title,
-      type,
       category,
+      documentDate,
       file,
     });
     handleReset();
@@ -38,8 +38,8 @@ export const DocumentUploadForm = ({ open, onOpenChange, onSubmit }: DocumentUpl
 
   const handleReset = () => {
     setTitle("");
-    setType("");
     setCategory("");
+    setDocumentDate(new Date().toISOString().split('T')[0]);
     setFile(null);
   };
 
@@ -50,6 +50,23 @@ export const DocumentUploadForm = ({ open, onOpenChange, onSubmit }: DocumentUpl
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
+
+  const categoryOptions = [
+    "Administrasi",
+    "Akademik",
+    "Keuangan",
+    "Kepegawaian",
+    "Laporan",
+    "Rapor",
+    "Sertifikat",
+    "Surat",
+    "Notulen",
+    "Inventaris",
+    "Panduan",
+    "Evaluasi",
+    "Dokumentasi",
+    "Lainnya"
+  ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -69,35 +86,27 @@ export const DocumentUploadForm = ({ open, onOpenChange, onSubmit }: DocumentUpl
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="type">Tipe Dokumen</Label>
-            <Select value={type} onValueChange={setType}>
-              <SelectTrigger>
-                <SelectValue placeholder="Pilih tipe dokumen" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Rapor">Rapor</SelectItem>
-                <SelectItem value="Sertifikat">Sertifikat</SelectItem>
-                <SelectItem value="Surat">Surat</SelectItem>
-                <SelectItem value="Laporan">Laporan</SelectItem>
-                <SelectItem value="Lainnya">Lainnya</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="category">Kategori</Label>
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger>
                 <SelectValue placeholder="Pilih kategori" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Administrasi">Administrasi</SelectItem>
-                <SelectItem value="Akademik">Akademik</SelectItem>
-                <SelectItem value="Keuangan">Keuangan</SelectItem>
-                <SelectItem value="Kepegawaian">Kepegawaian</SelectItem>
-                <SelectItem value="Lainnya">Lainnya</SelectItem>
+                {categoryOptions.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="documentDate">Tanggal Dokumen</Label>
+            <Input
+              id="documentDate"
+              type="date"
+              value={documentDate}
+              onChange={(e) => setDocumentDate(e.target.value)}
+            />
           </div>
 
           <div className="space-y-2">
@@ -131,7 +140,7 @@ export const DocumentUploadForm = ({ open, onOpenChange, onSubmit }: DocumentUpl
           <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
             Batal
           </Button>
-          <Button onClick={handleSubmit} disabled={!file || !title || !type || !category} className="w-full sm:w-auto">
+          <Button onClick={handleSubmit} disabled={!file || !title || !category || !documentDate} className="w-full sm:w-auto">
             Upload
           </Button>
         </DialogFooter>

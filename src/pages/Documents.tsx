@@ -92,6 +92,16 @@ const Documents = () => {
       ) : <span className="text-muted-foreground">-</span>,
     },
     {
+      key: 'documentDate',
+      header: 'Tanggal Dokumen',
+      render: (item) => item.documentDate ? (
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm">{new Date(item.documentDate).toLocaleDateString('id-ID')}</span>
+        </div>
+      ) : <span className="text-muted-foreground">-</span>,
+    },
+    {
       key: 'uploadedAt',
       header: 'Tanggal Upload',
       render: (item) => item.uploadedAt ? (

@@ -19,16 +19,18 @@ export interface Document {
 
 export interface CreateDocumentData {
   title: string;
-  type: 'rapor' | 'laporan' | 'sertifikat' | 'lainnya';
+  category: string;
   file: File;
   studentId?: string;
+  documentDate?: string;
 }
 
 export interface UpdateDocumentData {
   title?: string;
-  type?: string;
   category?: string;
   studentId?: string;
+  file?: File;
+  documentDate?: string;
 }
 
 export const documentService = {
@@ -47,9 +49,10 @@ export const documentService = {
   async create(data: CreateDocumentData): Promise<Document> {
     const formData = new FormData();
     formData.append('title', data.title);
-    formData.append('type', data.type);
+    formData.append('category', data.category);
     formData.append('file', data.file);
     if (data.studentId) formData.append('studentId', data.studentId);
+    if (data.documentDate) formData.append('documentDate', data.documentDate);
 
       const token = localStorage.getItem('token');
       const response = await fetch(`${import.meta.env.VITE_API_URL}/documents`, {
@@ -69,8 +72,28 @@ export const documentService = {
   },
 
   async update(id: string, data: UpdateDocumentData): Promise<Document> {
-    const response = await api.put<ApiResponse<Document>>(`/documents/${id}`, data);
-    return response.data.data;
+    const formData = new FormData();
+    if (data.title !== undefined) formData.append('title', data.title);
+    if (data.category !== undefined) formData.append('category', data.category);
+    if (data.file) formData.append('file', data.file);
+    if (data.studentId) formData.append('studentId', data.studentId);
+    if (data.documentDate !== undefined) formData.append('documentDate', data.documentDate);
+
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/documents/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('Gagal update dokumen');
+    }
+
+    const result = (await response.json()) as ApiResponse<Document>;
+    return result.data;
   },
 
   async delete(id: string): Promise<void> {
