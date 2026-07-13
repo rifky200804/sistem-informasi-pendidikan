@@ -56,8 +56,10 @@ export const studentService = {
     await api.delete<ApiResponse<void>>(`/students/${id}`);
   },
 
-  async getOptions(): Promise<SelectOption[]> {
-    const response = await api.get<ApiResponse<SelectOption[]>>('/students/options');
+  async getOptions(className?: string): Promise<SelectOption[]> {
+    const response = await api.get<ApiResponse<SelectOption[]>>('/students/options', {
+      params: { className }
+    });
     return response.data?.data || [];
   },
 };

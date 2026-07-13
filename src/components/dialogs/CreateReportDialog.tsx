@@ -10,12 +10,14 @@ interface CreateReportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (studentId: string, studentName: string, year: string, semester: string) => void;
+  classNameFilter?: string;
 }
 
 export const CreateReportDialog = ({
   open,
   onOpenChange,
   onSubmit,
+  classNameFilter,
 }: CreateReportDialogProps) => {
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth(); // 0-based, jadi 0 = Januari, 11 = Desember
@@ -42,12 +44,12 @@ export const CreateReportDialog = ({
     if (open) {
       fetchStudentOptions();
     }
-  }, [open]);
+  }, [open, classNameFilter]);
 
   const fetchStudentOptions = async () => {
     setLoadingStudents(true);
     try {
-      const options = await studentService.getOptions();
+      const options = await studentService.getOptions(classNameFilter);
       setStudentOptions(options);
     } catch (error) {
       console.error("Gagal memuat opsi siswa:", error);

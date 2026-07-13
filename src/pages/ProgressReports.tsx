@@ -826,6 +826,7 @@ const ProgressReports = () => {
           open={isCreateDialogOpen}
           onOpenChange={setIsCreateDialogOpen}
           onSubmit={handleCreateNewReport}
+          classNameFilter={classNameFilter}
         />
       )}
 
