@@ -183,7 +183,7 @@ const ReportTemplates = () => {
     }
 
     return cols.map((header, idx) => (
-      <th key={idx} className={`border p-2 bg-muted text-xs ${header.toLowerCase() === 'no' ? 'w-12 text-center' : 'text-left'}`}>
+      <th key={idx} className={`border border-[#cbd5e1] p-2 bg-[#5b9bd5] text-white text-xs ${header.toLowerCase() === 'no' ? 'w-12 text-center' : 'text-left'}`}>
         {header}
       </th>
     ));
@@ -286,7 +286,7 @@ const ReportTemplates = () => {
 
                     {/* Preview section content */}
                     {section.type === 'table_text' && (
-                      <table className="w-full text-sm border-collapse bg-background">
+                      <table className="w-full text-sm border-collapse bg-background border border-[#cbd5e1]">
                         <thead>
                           <tr>
                             {renderTableHeaders(section, ['Pernyataan', 'Nilai', 'Predikat', 'Keterangan'])}
@@ -297,10 +297,10 @@ const ReportTemplates = () => {
                             const colCount = getColumnCount(section, ['Pernyataan', 'Nilai', 'Predikat', 'Keterangan']);
                             return (
                               <tr key={i}>
-                                <td className="border p-2 text-center">{i + 1}</td>
-                                <td className="border p-2">{q.Question}</td>
+                                <td className="border border-[#cbd5e1] p-2 text-center">{i + 1}</td>
+                                <td className="border border-[#cbd5e1] p-2">{q.Question}</td>
                                 {Array.from({ length: Math.max(0, colCount - 2) }).map((_, colIdx) => (
-                                  <td key={colIdx} className="border p-2"></td>
+                                  <td key={colIdx} className="border border-[#cbd5e1] p-2"></td>
                                 ))}
                               </tr>
                             );
@@ -310,7 +310,7 @@ const ReportTemplates = () => {
                     )}
 
                     {section.type === 'table' && (
-                      <table className="w-full text-sm border-collapse bg-background">
+                      <table className="w-full text-sm border-collapse bg-background border border-[#cbd5e1]">
                         <thead>
                           <tr>
                             {renderTableHeaders(section, ['Pernyataan', 'Nilai', 'Predikat', 'Keterangan'])}
@@ -332,16 +332,16 @@ const ReportTemplates = () => {
                               <tr key={i}>
                                 {cols.map((col, cIdx) => {
                                   if (col.toLowerCase() === 'no') {
-                                    return <td key={cIdx} className="border p-2 text-center">{i + 1}</td>;
+                                    return <td key={cIdx} className="border border-[#cbd5e1] p-2 text-center">{i + 1}</td>;
                                   }
                                   if (cIdx === 1) {
-                                    return <td key={cIdx} className="border p-2">{q.Question}</td>;
+                                    return <td key={cIdx} className="border border-[#cbd5e1] p-2">{q.Question}</td>;
                                   }
                                   if (col.toLowerCase() === 'predikat' || (cIdx === cols.length - 2 && !cols.some(c => c.toLowerCase() === 'predikat'))) {
                                     return (
-                                      <td key={cIdx} className="border p-2 min-w-[120px]">
+                                      <td key={cIdx} className="border border-[#cbd5e1] p-2 min-w-[120px]">
                                         <Select disabled>
-                                          <SelectTrigger className="w-full h-8 text-xs">
+                                          <SelectTrigger className="w-full h-8 text-xs border-[#cbd5e1]">
                                             <SelectValue placeholder="Pilih..." />
                                           </SelectTrigger>
                                           <SelectContent>
@@ -353,7 +353,7 @@ const ReportTemplates = () => {
                                       </td>
                                     );
                                   }
-                                  return <td key={cIdx} className="border p-2"></td>;
+                                  return <td key={cIdx} className="border border-[#cbd5e1] p-2">-</td>;
                                 })}
                               </tr>
                             );

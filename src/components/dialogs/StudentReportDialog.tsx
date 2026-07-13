@@ -487,7 +487,7 @@ export const StudentReportDialog = ({
                     const renderCell = (header: string, row: any, idx: number, colIndex: number) => {
                       const key = header?.toLowerCase()?.trim();
                       if (key === "no") {
-                        return <td key={header} className="border p-2 text-center align-middle w-12">{idx + 1}</td>;
+                        return <td key={header} className="border border-[#cbd5e1] p-2 text-center align-middle w-12">{idx + 1}</td>;
                       }
 
                       // Position among non-No columns (0-based)
@@ -495,7 +495,7 @@ export const StudentReportDialog = ({
 
                       // First column after No = Question (read-only)
                       if (nonNoIndex === 0) {
-                        return <td key={header} className="border p-2 align-top">{row.Question}</td>;
+                        return <td key={header} className="border border-[#cbd5e1] p-2 align-top">{row.Question}</td>;
                       }
 
                       // Remaining columns based on total non-No column count:
@@ -505,9 +505,9 @@ export const StudentReportDialog = ({
                       if (colCount >= 4) {
                         if (nonNoIndex === 1) {
                           return (
-                            <td key={header} className="border p-1">
+                            <td key={header} className="border border-[#cbd5e1] p-1">
                               <Textarea
-                                className="min-h-[60px] text-center resize-y text-xs"
+                                className="min-h-[60px] text-center resize-y text-xs border-[#cbd5e1]"
                                 value={row.answer || ""}
                                 onChange={(e) => handleTableTextChange(sectionId, idx, "answer", e.target.value)}
                                 readOnly={readOnly}
@@ -517,9 +517,9 @@ export const StudentReportDialog = ({
                         }
                         if (nonNoIndex === 2) {
                           return (
-                            <td key={header} className="border p-1">
+                            <td key={header} className="border border-[#cbd5e1] p-1">
                               <Textarea
-                                className="min-h-[60px] text-center resize-y text-xs"
+                                className="min-h-[60px] text-center resize-y text-xs border-[#cbd5e1]"
                                 value={row.predikat || ""}
                                 onChange={(e) => handleTableTextChange(sectionId, idx, "predikat", e.target.value)}
                                 readOnly={readOnly}
@@ -529,9 +529,9 @@ export const StudentReportDialog = ({
                         }
                         if (nonNoIndex === 3) {
                           return (
-                            <td key={header} className="border p-1">
+                            <td key={header} className="border border-[#cbd5e1] p-1">
                               <Textarea
-                                className="min-h-[60px] resize-y text-xs"
+                                className="min-h-[60px] resize-y text-xs border-[#cbd5e1]"
                                 value={row.Ket || ""}
                                 onChange={(e) => handleTableTextChange(sectionId, idx, "Ket", e.target.value)}
                                 readOnly={readOnly}
@@ -542,9 +542,9 @@ export const StudentReportDialog = ({
                       } else if (colCount === 3) {
                         if (nonNoIndex === 1) {
                           return (
-                            <td key={header} className="border p-1">
+                            <td key={header} className="border border-[#cbd5e1] p-1">
                               <Textarea
-                                className="min-h-[60px] text-center resize-y text-xs"
+                                className="min-h-[60px] text-center resize-y text-xs border-[#cbd5e1]"
                                 value={row.answer || ""}
                                 onChange={(e) => handleTableTextChange(sectionId, idx, "answer", e.target.value)}
                                 readOnly={readOnly}
@@ -554,9 +554,9 @@ export const StudentReportDialog = ({
                         }
                         if (nonNoIndex === 2) {
                           return (
-                            <td key={header} className="border p-1">
+                            <td key={header} className="border border-[#cbd5e1] p-1">
                               <Textarea
-                                className="min-h-[60px] resize-y text-xs"
+                                className="min-h-[60px] resize-y text-xs border-[#cbd5e1]"
                                 value={row.Ket || ""}
                                 onChange={(e) => handleTableTextChange(sectionId, idx, "Ket", e.target.value)}
                                 readOnly={readOnly}
@@ -567,9 +567,9 @@ export const StudentReportDialog = ({
                       } else if (colCount === 2) {
                         if (nonNoIndex === 1) {
                           return (
-                            <td key={header} className="border p-1">
+                            <td key={header} className="border border-[#cbd5e1] p-1">
                               <Textarea
-                                className="min-h-[60px] resize-y text-xs"
+                                className="min-h-[60px] resize-y text-xs border-[#cbd5e1]"
                                 value={row.Ket || ""}
                                 onChange={(e) => handleTableTextChange(sectionId, idx, "Ket", e.target.value)}
                                 readOnly={readOnly}
@@ -579,16 +579,16 @@ export const StudentReportDialog = ({
                         }
                       }
 
-                      return <td key={header} className="border p-2">-</td>;
+                      return <td key={header} className="border border-[#cbd5e1] p-2">-</td>;
                     };
 
                     return (
                       <div className="overflow-x-auto">
-                        <table className="w-full text-sm border-collapse min-w-[500px]">
+                        <table className="w-full text-sm border-collapse min-w-[500px] border border-[#cbd5e1]">
                           <thead>
                             <tr>
                               {headers.map((h: string, hIdx: number) => (
-                                <th key={hIdx} className="border p-2 text-center bg-sky-100">{h}</th>
+                                <th key={hIdx} className="border border-[#cbd5e1] p-2 text-center bg-[#5b9bd5] text-white">{h}</th>
                               ))}
                             </tr>
                           </thead>
@@ -613,14 +613,14 @@ export const StudentReportDialog = ({
                     const renderCell = (header: string, row: any, idx: number, colIndex: number) => {
                       const key = header?.toLowerCase()?.trim();
                       if (key === "no") {
-                        return <td key={header} className="border p-2 text-center align-middle w-12">{idx + 1}</td>;
+                        return <td key={header} className="border border-[#cbd5e1] p-2 text-center align-middle w-12">{idx + 1}</td>;
                       }
 
                       const nonNoIndex = colIndex - (headers[0]?.toLowerCase().trim() === "no" ? 1 : 0);
 
                       // First column after No = Question (read-only)
                       if (nonNoIndex === 0) {
-                        return <td key={header} className="border p-2 align-top">{row.Question}</td>;
+                        return <td key={header} className="border border-[#cbd5e1] p-2 align-top">{row.Question}</td>;
                       }
 
                       // For "table" type, the answer column uses a select dropdown
@@ -631,9 +631,9 @@ export const StudentReportDialog = ({
                         if (nonNoIndex === 1) {
                           const options = row.answers?.length > 0 ? row.answers : section.Questions?.[idx]?.answers?.length > 0 ? section.Questions[idx].answers : section.Questions?.[0]?.answers || [];
                           return (
-                            <td key={header} className="border p-2 align-top">
+                            <td key={header} className="border border-[#cbd5e1] p-2 align-top">
                               <select
-                                className="w-full rounded border border-slate-300 bg-white px-2 py-2 text-sm"
+                                className="w-full rounded border border-[#cbd5e1] bg-white px-2 py-2 text-sm"
                                 value={row.answer || ""}
                                 onChange={(e) => handleTableChange(sectionId, idx, "answer", e.target.value)}
                                 disabled={readOnly}
@@ -648,9 +648,9 @@ export const StudentReportDialog = ({
                         }
                         if (nonNoIndex === 2) {
                           return (
-                            <td key={header} className="border p-2 align-top">
+                            <td key={header} className="border border-[#cbd5e1] p-2 align-top">
                               <Textarea
-                                className="min-h-[60px] text-center resize-y text-xs"
+                                className="min-h-[60px] text-center resize-y text-xs border-[#cbd5e1]"
                                 value={row.predikat || ""}
                                 onChange={(e) => handleTableChange(sectionId, idx, "predikat", e.target.value)}
                                 readOnly={readOnly}
@@ -660,9 +660,9 @@ export const StudentReportDialog = ({
                         }
                         if (nonNoIndex === 3) {
                           return (
-                            <td key={header} className="border p-2 align-top">
+                            <td key={header} className="border border-[#cbd5e1] p-2 align-top">
                               <Textarea
-                                className="min-h-[60px] resize-y text-xs"
+                                className="min-h-[60px] resize-y text-xs border-[#cbd5e1]"
                                 value={row.Ket || ""}
                                 onChange={(e) => handleTableChange(sectionId, idx, "Ket", e.target.value)}
                                 readOnly={readOnly}
@@ -674,9 +674,9 @@ export const StudentReportDialog = ({
                         if (nonNoIndex === 1) {
                           const options = row.answers?.length > 0 ? row.answers : section.Questions?.[idx]?.answers?.length > 0 ? section.Questions[idx].answers : section.Questions?.[0]?.answers || [];
                           return (
-                            <td key={header} className="border p-2 align-top">
+                            <td key={header} className="border border-[#cbd5e1] p-2 align-top">
                               <select
-                                className="w-full rounded border border-slate-300 bg-white px-2 py-2 text-sm"
+                                className="w-full rounded border border-[#cbd5e1] bg-white px-2 py-2 text-sm"
                                 value={row.answer || ""}
                                 onChange={(e) => handleTableChange(sectionId, idx, "answer", e.target.value)}
                                 disabled={readOnly}
@@ -691,9 +691,9 @@ export const StudentReportDialog = ({
                         }
                         if (nonNoIndex === 2) {
                           return (
-                            <td key={header} className="border p-2 align-top">
+                            <td key={header} className="border border-[#cbd5e1] p-2 align-top">
                               <Textarea
-                                className="min-h-[60px] resize-y text-xs"
+                                className="min-h-[60px] resize-y text-xs border-[#cbd5e1]"
                                 value={row.Ket || ""}
                                 onChange={(e) => handleTableChange(sectionId, idx, "Ket", e.target.value)}
                                 readOnly={readOnly}
@@ -704,9 +704,9 @@ export const StudentReportDialog = ({
                       } else if (colCount === 2) {
                         if (nonNoIndex === 1) {
                           return (
-                            <td key={header} className="border p-2 align-top">
+                            <td key={header} className="border border-[#cbd5e1] p-2 align-top">
                               <Textarea
-                                className="min-h-[60px] resize-y text-xs"
+                                className="min-h-[60px] resize-y text-xs border-[#cbd5e1]"
                                 value={row.Ket || ""}
                                 onChange={(e) => handleTableChange(sectionId, idx, "Ket", e.target.value)}
                                 readOnly={readOnly}
@@ -716,16 +716,16 @@ export const StudentReportDialog = ({
                         }
                       }
 
-                      return <td key={header} className="border p-2">-</td>;
+                      return <td key={header} className="border border-[#cbd5e1] p-2">-</td>;
                     };
 
                     return (
                       <div className="overflow-x-auto">
-                        <table className="w-full text-sm border-collapse min-w-[600px]">
+                        <table className="w-full text-sm border-collapse min-w-[600px] border border-[#cbd5e1]">
                           <thead>
                             <tr>
                               {headers.map((h: string, hIdx: number) => (
-                                <th key={hIdx} className="border p-2 text-center bg-sky-100">{h}</th>
+                                <th key={hIdx} className="border border-[#cbd5e1] p-2 text-center bg-[#5b9bd5] text-white">{h}</th>
                               ))}
                             </tr>
                           </thead>
