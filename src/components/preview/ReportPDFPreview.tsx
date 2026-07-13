@@ -224,11 +224,11 @@ export const ReportPDFPreview = ({
                 const colCount = cols.filter((h: string) => h.toLowerCase().trim() !== "no").length;
 
                 return (
-                  <table className="w-full border-collapse mb-5 text-xs text-black border border-black">
+                  <table className="w-full border-collapse mb-5 text-xs text-black border border-[#cbd5e1]">
                     <thead>
                       <tr>
                         {cols.map((col, cIdx) => (
-                          <th key={cIdx} className="border border-black p-2 text-center font-bold bg-[#e5e7eb] text-black">{col}</th>
+                          <th key={cIdx} className="border border-[#cbd5e1] p-2 text-center font-bold bg-[#5b9bd5] text-white">{col}</th>
                         ))}
                       </tr>
                     </thead>
@@ -236,27 +236,27 @@ export const ReportPDFPreview = ({
                       {(section.Questions || []).map((q: Question, i: number) => (
                         <Fragment key={i}>
                           <tr className="bg-[#f2f2f2] font-bold">
-                            <td className="border border-black p-2 text-center w-10">{i + 1}</td>
-                            <td colSpan={cols.length - 1} className="border border-black p-2 text-left">{q.Question}</td>
+                            <td className="border border-[#cbd5e1] p-2 text-center w-10">{i + 1}</td>
+                            <td colSpan={cols.length - 1} className="border border-[#cbd5e1] p-2 text-left">{q.Question}</td>
                           </tr>
                           <tr className="bg-white">
-                            <td className="border border-black"></td>
-                            <td className="border border-black"></td>
+                            <td className="border border-[#cbd5e1]"></td>
+                            <td className="border border-[#cbd5e1]"></td>
                             {colCount >= 4 && (
                               <>
-                                <td className="border border-black p-2 text-center text-gray-400 font-bold">[ Nilai ]</td>
-                                <td className="border border-black p-2 text-center text-gray-400 font-bold">[ Predikat ]</td>
-                                <td className="border border-black p-2 text-left text-gray-400">[ Narasi Keterangan ]</td>
+                                <td className="border border-[#cbd5e1] p-2 text-center text-gray-400 font-bold">[ Nilai ]</td>
+                                <td className="border border-[#cbd5e1] p-2 text-center text-gray-400 font-bold">[ Predikat ]</td>
+                                <td className="border border-[#cbd5e1] p-2 text-left text-gray-400">[ Narasi Keterangan ]</td>
                               </>
                             )}
                             {colCount === 3 && (
                               <>
-                                <td className="border border-black p-2 text-center text-gray-400 font-bold">[ Nilai ]</td>
-                                <td className="border border-black p-2 text-left text-gray-400">[ Narasi Keterangan ]</td>
+                                <td className="border border-[#cbd5e1] p-2 text-center text-gray-400 font-bold">[ Nilai ]</td>
+                                <td className="border border-[#cbd5e1] p-2 text-left text-gray-400">[ Narasi Keterangan ]</td>
                               </>
                             )}
                             {colCount === 2 && (
-                              <td className="border border-black p-2 text-left text-gray-400">[ Narasi Keterangan ]</td>
+                              <td className="border border-[#cbd5e1] p-2 text-left text-gray-400">[ Narasi Keterangan ]</td>
                             )}
                           </tr>
                         </Fragment>
@@ -277,11 +277,11 @@ export const ReportPDFPreview = ({
                 const colCount = cols.filter((h: string) => h.toLowerCase().trim() !== "no").length;
 
                 return (
-                  <table className="w-full border-collapse mb-5 text-xs text-black border border-black">
+                  <table className="w-full border-collapse mb-5 text-xs text-black border border-[#cbd5e1]">
                     <thead>
                       <tr>
                         {cols.map((col, cIdx) => (
-                          <th key={cIdx} className="border border-black p-2 text-center font-bold bg-[#e5e7eb] text-black">{col}</th>
+                          <th key={cIdx} className="border border-[#cbd5e1] p-2 text-center font-bold bg-[#5b9bd5] text-white">{col}</th>
                         ))}
                       </tr>
                     </thead>
@@ -290,23 +290,23 @@ export const ReportPDFPreview = ({
                         <tr key={i} className="bg-white">
                           {cols.map((col, cIdx) => {
                             if (col.toLowerCase() === 'no') {
-                              return <td key={cIdx} className="border border-black p-2 text-center w-10">{i + 1}</td>;
+                              return <td key={cIdx} className="border border-[#cbd5e1] p-2 text-center w-10">{i + 1}</td>;
                             }
                             const nonNoIndex = cIdx - (cols[0]?.toLowerCase().trim() === "no" ? 1 : 0);
                             if (nonNoIndex === 0) {
-                              return <td key={cIdx} className="border border-black p-2 text-left align-top">{q.Question}</td>;
+                              return <td key={cIdx} className="border border-[#cbd5e1] p-2 text-left align-top">{q.Question}</td>;
                             }
                             if (colCount >= 4) {
-                              if (nonNoIndex === 1) return <td key={cIdx} className="border border-black p-2 text-center text-gray-400 font-bold">[ Nilai ]</td>;
-                              if (nonNoIndex === 2) return <td key={cIdx} className="border border-black p-2 text-center text-gray-400 font-bold">[ Predikat ]</td>;
-                              if (nonNoIndex === 3) return <td key={cIdx} className="border border-black p-2 text-left text-gray-400">[ Narasi Keterangan ]</td>;
+                              if (nonNoIndex === 1) return <td key={cIdx} className="border border-[#cbd5e1] p-2 text-center text-gray-400 font-bold">[ Nilai ]</td>;
+                              if (nonNoIndex === 2) return <td key={cIdx} className="border border-[#cbd5e1] p-2 text-center text-gray-400 font-bold">[ Predikat ]</td>;
+                              if (nonNoIndex === 3) return <td key={cIdx} className="border border-[#cbd5e1] p-2 text-left text-gray-400">[ Narasi Keterangan ]</td>;
                             } else if (colCount === 3) {
-                              if (nonNoIndex === 1) return <td key={cIdx} className="border border-black p-2 text-center text-gray-400 font-bold">[ Nilai ]</td>;
-                              if (nonNoIndex === 2) return <td key={cIdx} className="border border-black p-2 text-left text-gray-400">[ Narasi Keterangan ]</td>;
+                              if (nonNoIndex === 1) return <td key={cIdx} className="border border-[#cbd5e1] p-2 text-center text-gray-400 font-bold">[ Nilai ]</td>;
+                              if (nonNoIndex === 2) return <td key={cIdx} className="border border-[#cbd5e1] p-2 text-left text-gray-400">[ Narasi Keterangan ]</td>;
                             } else if (colCount === 2) {
-                              if (nonNoIndex === 1) return <td key={cIdx} className="border border-black p-2 text-left text-gray-400">[ Narasi Keterangan ]</td>;
+                              if (nonNoIndex === 1) return <td key={cIdx} className="border border-[#cbd5e1] p-2 text-left text-gray-400">[ Narasi Keterangan ]</td>;
                             }
-                            return <td key={cIdx} className="border border-black p-2 text-center text-gray-400">-</td>;
+                            return <td key={cIdx} className="border border-[#cbd5e1] p-2 text-center text-gray-400">-</td>;
                           })}
                         </tr>
                       ))}

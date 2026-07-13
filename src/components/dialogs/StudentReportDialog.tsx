@@ -279,35 +279,35 @@ export const StudentReportDialog = ({
                             const cells: JSX.Element[] = [];
                             if (colCount >= 4) {
                               cells.push(
-                                <td key="answer" className="border border-black p-2 text-center align-middle font-bold">{row.answer || ''}</td>
+                                <td key="answer" className="border border-[#cbd5e1] p-2 text-center align-middle font-bold">{row.answer || ''}</td>
                               );
                               cells.push(
-                                <td key="predikat" className="border border-black p-2 text-center align-middle font-bold">{row.predikat || ''}</td>
+                                <td key="predikat" className="border border-[#cbd5e1] p-2 text-center align-middle font-bold">{row.predikat || ''}</td>
                               );
                               cells.push(
-                                <td key="ket" className="border border-black p-2 text-left align-top whitespace-pre-wrap">{row.Ket || ''}</td>
+                                <td key="ket" className="border border-[#cbd5e1] p-2 text-left align-top whitespace-pre-wrap">{row.Ket || ''}</td>
                               );
                             } else if (colCount === 3) {
                               cells.push(
-                                <td key="answer" className="border border-black p-2 text-center align-middle font-bold">{row.answer || ''}</td>
+                                <td key="answer" className="border border-[#cbd5e1] p-2 text-center align-middle font-bold">{row.answer || ''}</td>
                               );
                               cells.push(
-                                <td key="ket" className="border border-black p-2 text-left align-top whitespace-pre-wrap">{row.Ket || ''}</td>
+                                <td key="ket" className="border border-[#cbd5e1] p-2 text-left align-top whitespace-pre-wrap">{row.Ket || ''}</td>
                               );
                             } else if (colCount === 2) {
                               cells.push(
-                                <td key="ket" className="border border-black p-2 text-left align-top whitespace-pre-wrap">{row.Ket || ''}</td>
+                                <td key="ket" className="border border-[#cbd5e1] p-2 text-left align-top whitespace-pre-wrap">{row.Ket || ''}</td>
                               );
                             }
                             return cells;
                           };
 
                           return (
-                            <table className="w-full border-collapse mb-5 text-xs text-black border border-black">
+                            <table className="w-full border-collapse mb-5 text-xs text-black border border-[#cbd5e1]">
                               <thead>
                                 <tr>
                                   {headers.map((h: string, hIdx: number) => (
-                                    <th key={hIdx} className="border border-black p-2 text-center font-bold bg-[#e5e7eb] text-black">{h}</th>
+                                    <th key={hIdx} className="border border-[#cbd5e1] p-2 text-center font-bold bg-[#5b9bd5] text-white">{h}</th>
                                   ))}
                                 </tr>
                               </thead>
@@ -315,12 +315,12 @@ export const StudentReportDialog = ({
                                 {(sectionData?.rows || []).map((row: any, rIdx: number) => (
                                   <Fragment key={rIdx}>
                                     <tr className="bg-[#f2f2f2] font-bold">
-                                      <td className="border border-black p-2 text-center w-10">{rIdx + 1}</td>
-                                      <td colSpan={headers.length - 1} className="border border-black p-2 text-left">{row.Question}</td>
+                                      <td className="border border-[#cbd5e1] p-2 text-center w-10">{rIdx + 1}</td>
+                                      <td colSpan={headers.length - 1} className="border border-[#cbd5e1] p-2 text-left">{row.Question}</td>
                                     </tr>
                                     <tr className="bg-white">
-                                      <td className="border border-black"></td>
-                                      <td className="border border-black"></td>
+                                      <td className="border border-[#cbd5e1]"></td>
+                                      <td className="border border-[#cbd5e1]"></td>
                                       {renderValueCells(row)}
                                     </tr>
                                   </Fragment>
@@ -340,7 +340,7 @@ export const StudentReportDialog = ({
                             const key = header?.toLowerCase()?.trim();
                             if (key === "no") {
                               return (
-                                <td key={header} className="border border-black p-2 text-center w-10">
+                                <td key={header} className="border border-[#cbd5e1] p-2 text-center w-10">
                                   {rowIndex + 1}
                                 </td>
                               );
@@ -351,7 +351,7 @@ export const StudentReportDialog = ({
                             // First column after No = Question (read-only)
                             if (nonNoIndex === 0) {
                               return (
-                                <td key={header} className="border border-black p-2 text-left align-top">
+                                <td key={header} className="border border-[#cbd5e1] p-2 text-left align-top">
                                   {row.Question || ""}
                                 </td>
                               );
@@ -361,27 +361,27 @@ export const StudentReportDialog = ({
                             // 3 cols = Question, answer, Ket
                             // 2 cols = Question, Ket
                             if (colCount >= 4) {
-                              if (nonNoIndex === 1) return <td key={header} className="border border-black p-2 text-center align-middle font-bold">{row.answer || ""}</td>;
-                              if (nonNoIndex === 2) return <td key={header} className="border border-black p-2 text-center align-middle font-bold">{row.predikat || ""}</td>;
-                              if (nonNoIndex === 3) return <td key={header} className="border border-black p-2 text-left align-top whitespace-pre-wrap">{row.Ket || ""}</td>;
+                              if (nonNoIndex === 1) return <td key={header} className="border border-[#cbd5e1] p-2 text-center align-middle font-bold">{row.answer || ""}</td>;
+                              if (nonNoIndex === 2) return <td key={header} className="border border-[#cbd5e1] p-2 text-center align-middle font-bold">{row.predikat || ""}</td>;
+                              if (nonNoIndex === 3) return <td key={header} className="border border-[#cbd5e1] p-2 text-left align-top whitespace-pre-wrap">{row.Ket || ""}</td>;
                             } else if (colCount === 3) {
-                              if (nonNoIndex === 1) return <td key={header} className="border border-black p-2 text-center align-middle font-bold">{row.answer || ""}</td>;
-                              if (nonNoIndex === 2) return <td key={header} className="border border-black p-2 text-left align-top whitespace-pre-wrap">{row.Ket || ""}</td>;
+                              if (nonNoIndex === 1) return <td key={header} className="border border-[#cbd5e1] p-2 text-center align-middle font-bold">{row.answer || ""}</td>;
+                              if (nonNoIndex === 2) return <td key={header} className="border border-[#cbd5e1] p-2 text-left align-top whitespace-pre-wrap">{row.Ket || ""}</td>;
                             } else if (colCount === 2) {
-                              if (nonNoIndex === 1) return <td key={header} className="border border-black p-2 text-left align-top whitespace-pre-wrap">{row.Ket || ""}</td>;
+                              if (nonNoIndex === 1) return <td key={header} className="border border-[#cbd5e1] p-2 text-left align-top whitespace-pre-wrap">{row.Ket || ""}</td>;
                             }
 
                             return (
-                              <td key={header} className="border border-black p-2 text-left align-top">-</td>
+                              <td key={header} className="border border-[#cbd5e1] p-2 text-left align-top">-</td>
                             );
                           };
 
                           return (
-                            <table className="w-full border-collapse mb-5 text-xs text-black border border-black">
+                            <table className="w-full border-collapse mb-5 text-xs text-black border border-[#cbd5e1]">
                               <thead>
                                 <tr>
                                   {headers.map((h: string, hIdx: number) => (
-                                    <th key={hIdx} className="border border-black p-2 text-center font-bold bg-[#e5e7eb] text-black">{h}</th>
+                                    <th key={hIdx} className="border border-[#cbd5e1] p-2 text-center font-bold bg-[#5b9bd5] text-white">{h}</th>
                                   ))}
                                 </tr>
                               </thead>
