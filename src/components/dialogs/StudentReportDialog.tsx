@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Section, Question } from "@/types/reportTemplate";
-import { Save, Upload, X, Download } from "lucide-react";
+import { Save, Upload, X, Download, FileText } from "lucide-react";
 import { ImageCropDialog } from "@/components/dialogs/ImageCropDialog";
 import { getFileUrl } from "@/lib/fileUrl";
 
@@ -19,6 +19,7 @@ interface StudentReportDialogProps {
   report?: any;
   onSave?: (data: Record<string, any>) => void;
   onDownload?: (report: any) => void;
+  onExportDocx?: (report: any) => void;
   readOnly?: boolean;
   isNew?: boolean;
 }
@@ -33,6 +34,7 @@ export const StudentReportDialog = ({
   report,
   onSave,
   onDownload,
+  onExportDocx,
   readOnly = false,
   isNew = false,
 }: StudentReportDialogProps) => {
@@ -177,214 +179,254 @@ export const StudentReportDialog = ({
           <DialogTitle className="sr-only">Pratinjau Rapor</DialogTitle>
           <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center">
             <div className="w-full flex justify-start md:justify-center overflow-x-auto py-2 min-w-0">
-              <div className="w-[210mm] min-h-[297mm] h-fit bg-white border border-slate-200 shadow-xl p-[20mm] relative text-black shrink-0">
-            <div className="text-center font-bold text-2xl mb-5 border-b-2 border-black pb-2.5">
-              {templateName?.toUpperCase() || ''}
-            </div>
-            <div className="text-center text-sm mb-10 font-bold">
-              TAHUN AJARAN {report?.tahun_ajaran || report?.year} - SEMESTER {report?.semester?.toUpperCase() || ''}
-            </div>
-
-            <table className="w-full mb-8 text-sm">
-              <tbody>
-                <tr>
-                  <td className="w-32 font-bold p-1">Nama Siswa</td>
-                  <td className="w-2">:</td>
-                  <td className="p-1">{report?.student?.name || '-'}</td>
-                  <td className="w-32 font-bold p-1">Guru Wali</td>
-                  <td className="w-2">:</td>
-                  <td className="p-1">{report?.createdBy?.name || '-'}</td>
-                </tr>
-                <tr>
-                  <td className="font-bold p-1">NISN</td>
-                  <td>:</td>
-                  <td className="p-1">{report?.student?.nisn || '-'}</td>
-                  <td className="font-bold p-1">Kelas</td>
-                  <td>:</td>
-                  <td className="p-1">{report?.student?.className || '-'}</td>
-                </tr>
-              </tbody>
-            </table>
-
-            {sections.map((sec: any, idx: number) => {
-              const sectionId = getSectionKey(sec, idx);
-              const sectionData = formData[sectionId];
-
-              if (!sectionData) return null;
-
-              return (
-                <div key={sectionId} className="mb-6">
-                  {(sec.type !== "text" || sec.Section !== "") && (
-                    <div className="font-bold text-base mt-7 mb-3 p-2">
-                      {sec.Section}
+              <div className="w-[215.9mm] min-h-[355.6mm] h-fit bg-white border border-slate-300 shadow-xl p-[20mm] relative text-black shrink-0 overflow-hidden">
+                {/* Visual page boundaries for US Legal size paper */}
+                {Array.from({ length: 5 }).map((_, idx) => {
+                  const heightMm = (idx + 1) * 355.6;
+                  return (
+                    <div 
+                      key={idx} 
+                      className="absolute left-0 right-0 border-t-2 border-dashed border-red-400 pointer-events-none flex items-center justify-end pr-4 text-[10px] font-bold text-red-500 select-none z-50 print:hidden"
+                      style={{ top: `${heightMm}mm` }}
+                    >
+                      <span className="bg-white px-2 py-0.5 border border-red-300 rounded shadow-sm -mt-2">
+                        Batas Halaman {idx + 1} (Kertas Legal)
+                      </span>
                     </div>
-                  )}
+                  );
+                })}
 
-                  {sec.type === 'table_text' && (() => {
-                    let headers = sec.Headers?.length ? sec.Headers : sec.headers?.length ? sec.headers : ["Pernyataan", "Nilai", "Predikat", "Keterangan"];
-                    if (headers.length === 0 || headers[0]?.toLowerCase() !== "no") headers = ["No", ...headers];
-
-                    // colCount = number of columns excluding No
-                    const colCount = headers.filter((h: string) => h.toLowerCase().trim() !== "no").length;
-
-                    // Build value cells for second row based on positional logic
-                    const renderValueCells = (row: any) => {
-                      const cells: JSX.Element[] = [];
-                      // First cell in second row: empty (under No)
-                      // Second cell: empty (under Question/Aspek)
-                      // Then based on colCount:
-                      // 4 cols: answer, predikat, Ket
-                      // 3 cols: answer, Ket
-                      // 2 cols: Ket
-                      if (colCount >= 4) {
-                        cells.push(
-                          <td key="answer" className="border border-black p-2 text-center border-t-transparent align-middle font-bold">{row.answer || ''}</td>
-                        );
-                        cells.push(
-                          <td key="predikat" className="border border-black p-2 text-center border-t-transparent align-middle font-bold">{row.predikat || ''}</td>
-                        );
-                        cells.push(
-                          <td key="ket" className="border border-black p-2 text-left border-t-transparent align-top">{row.Ket || ''}</td>
-                        );
-                      } else if (colCount === 3) {
-                        cells.push(
-                          <td key="answer" className="border border-black p-2 text-center border-t-transparent align-middle font-bold">{row.answer || ''}</td>
-                        );
-                        cells.push(
-                          <td key="ket" className="border border-black p-2 text-left border-t-transparent align-top">{row.Ket || ''}</td>
-                        );
-                      } else if (colCount === 2) {
-                        cells.push(
-                          <td key="ket" className="border border-black p-2 text-left border-t-transparent align-top">{row.Ket || ''}</td>
-                        );
-                      }
-                      return cells;
-                    };
-
-                    return (
-                      <table className="w-full border-collapse mb-5 text-xs text-black">
-                        <thead className="bg-sky-100">
-                          <tr>
-                            {headers.map((h: string, hIdx: number) => (
-                              <th key={hIdx} className="border border-black p-2 text-center font-bold">{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {(sectionData?.rows || []).map((row: any, rIdx: number) => (
-                            <Fragment key={rIdx}>
-                              <tr className="bg-slate-100 font-bold">
-                                <td className="border border-black p-2 text-center w-10 border-b-transparent">{rIdx + 1}</td>
-                                <td colSpan={Math.max(1, headers.length - 1)} className="border border-black p-2 text-left border-b-transparent">{row.Question}</td>
-                              </tr>
-                              <tr>
-                                <td className="border border-black border-t-transparent"></td>
-                                <td className="border border-black border-t-transparent"></td>
-                                {renderValueCells(row)}
-                              </tr>
-                            </Fragment>
-                          ))}
-                        </tbody>
-                      </table>
-                    );
-                  })()}
-
-                  {sec.type === 'table' && (() => {
-                    let headers = sec.Headers?.length ? sec.Headers : sec.headers?.length ? sec.headers : ["Pernyataan", "Nilai", "Predikat", "Keterangan"];
-                    if (headers.length === 0 || headers[0]?.toLowerCase() !== "no") headers = ["No", ...headers];
-
-                    const colCount = headers.filter((h: string) => h.toLowerCase().trim() !== "no").length;
-
-                    const renderCell = (header: string, row: any, rowIndex: number, colIndex: number) => {
-                      const key = header?.toLowerCase()?.trim();
-                      if (key === "no") {
-                        return (
-                          <td key={header} className="border border-black p-2 text-center w-10">
-                            {rowIndex + 1}
-                          </td>
-                        );
-                      }
-
-                      const nonNoIndex = colIndex - (headers[0]?.toLowerCase().trim() === "no" ? 1 : 0);
-
-                      // First column after No = Question (read-only)
-                      if (nonNoIndex === 0) {
-                        return (
-                          <td key={header} className="border border-black p-2 text-left align-top">
-                            {row.Question || ""}
-                          </td>
-                        );
-                      }
-
-                      // Positional: 4 cols = Question, answer, predikat, Ket
-                      // 3 cols = Question, answer, Ket
-                      // 2 cols = Question, Ket
-                      if (colCount >= 4) {
-                        if (nonNoIndex === 1) return <td key={header} className="border border-black p-2 text-center align-middle font-bold">{row.answer || ""}</td>;
-                        if (nonNoIndex === 2) return <td key={header} className="border border-black p-2 text-center align-middle font-bold">{row.predikat || ""}</td>;
-                        if (nonNoIndex === 3) return <td key={header} className="border border-black p-2 text-left align-top">{row.Ket || ""}</td>;
-                      } else if (colCount === 3) {
-                        if (nonNoIndex === 1) return <td key={header} className="border border-black p-2 text-center align-middle font-bold">{row.answer || ""}</td>;
-                        if (nonNoIndex === 2) return <td key={header} className="border border-black p-2 text-left align-top">{row.Ket || ""}</td>;
-                      } else if (colCount === 2) {
-                        if (nonNoIndex === 1) return <td key={header} className="border border-black p-2 text-left align-top">{row.Ket || ""}</td>;
-                      }
-
-                      return (
-                        <td key={header} className="border border-black p-2 text-left align-top">-</td>
-                      );
-                    };
-
-                    return (
-                      <table className="w-full border-collapse mb-5 text-xs text-black">
-                        <thead className="bg-sky-100">
-                          <tr>
-                            {headers.map((h: string, hIdx: number) => (
-                              <th key={hIdx} className="border border-black p-2 text-center font-bold">{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {(sectionData?.rows || []).map((row: any, rIdx: number) => (
-                            <tr key={rIdx} className="bg-slate-100">
-                              {headers.map((h: string, colIdx: number) => renderCell(h, row, rIdx, colIdx))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    );
-                  })()}
-
-                  {sec.type === 'text' && (
-                    <>
-                      {(sectionData?.items || []).map((item: any, qIdx: number) => (
-                        <div key={qIdx} className="relative border-2 border-sky-500 bg-sky-50 rounded-xl p-6 pt-8 mt-8 mb-4">
-                          <div className="absolute -top-[14px] left-6 bg-sky-500 text-white px-5 py-0.5 rounded-[20px] font-bold text-[13px] uppercase shadow-sm">
-                            {item.Question || sec.Questions?.[qIdx]?.Question || ''}
-                          </div>
-
-                          {item.text && item.text.trim() !== '' && (
-                            <div className="text-[14px] whitespace-pre-wrap leading-[1.6] mb-4">
-                              {item.text}
-                            </div>
-                          )}
-
-                          {item.photos && item.photos.length > 0 && (
-                            <div className="flex flex-wrap gap-[15px] justify-center mt-4">
-                              {item.photos.map((pf: string, pIdx: number) => (
-                                <div key={pIdx} className="w-[45%] max-w-[300px] border border-slate-200 bg-slate-50 rounded-lg p-2 flex flex-col items-center">
-                                  <img src={getImageUrl(pf)} className="max-w-full max-h-[250px] object-contain rounded" alt="Dokumentasi" />
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </>
-                  )}
+                <div className="text-center font-bold text-xl mb-1">
+                  LAPORAN HASIL BELAJAR
                 </div>
-              );
-            })}
+                <div className="text-center font-bold text-xl mb-8">
+                  ( LHB )
+                </div>
+
+                <table className="mb-6 text-sm w-auto border-collapse">
+                  <tbody>
+                    <tr>
+                      <td className="w-40 p-1 text-left text-slate-700">Nama Sekolah</td>
+                      <td className="w-4 p-1 text-center">:</td>
+                      <td className="p-1 text-left">POS PAUD MELATI AZZAHRA</td>
+                    </tr>
+                    <tr>
+                      <td className="p-1 text-left text-slate-700">Tahun Ajaran</td>
+                      <td className="p-1 text-center">:</td>
+                      <td className="p-1 text-left">{report?.tahun_ajaran || report?.year || '-'}</td>
+                    </tr>
+                    <tr>
+                      <td className="p-1 text-left text-slate-700">Semester</td>
+                      <td className="p-1 text-center">:</td>
+                      <td className="p-1 text-left capitalize">{report?.semester || '-'}</td>
+                    </tr>
+                    <tr>
+                      <td className="p-1 text-left text-slate-700">Nama Siswa</td>
+                      <td className="p-1 text-center">:</td>
+                      <td className="p-1 text-left font-bold">{report?.student?.name || '-'}</td>
+                    </tr>
+                    <tr>
+                      <td className="p-1 text-left text-slate-700">Kelompok/kelas</td>
+                      <td className="p-1 text-center">:</td>
+                      <td className="p-1 text-left">{report?.student?.className || '-'}</td>
+                    </tr>
+                    <tr>
+                      <td className="p-1 text-left text-slate-700">Fase</td>
+                      <td className="p-1 text-center">:</td>
+                      <td className="p-1 text-left">Fondasi</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                {(() => {
+                  let hasRenderedIntrakurikulerHeader = false;
+                  return sections.map((sec: any, idx: number) => {
+                    const sectionId = getSectionKey(sec, idx);
+                    const sectionData = formData[sectionId];
+
+                    if (!sectionData) return null;
+
+                    const renderIntrakurikulerHeader = () => {
+                      if ((sec.type === 'table_text' || sec.type === 'table') && !hasRenderedIntrakurikulerHeader) {
+                        hasRenderedIntrakurikulerHeader = true;
+                        return (
+                          <div className="font-bold text-lg mt-6 mb-3 font-sans border-b pb-1 text-black">
+                            A. INTRAKURIKULER
+                          </div>
+                        );
+                      }
+                      return null;
+                    };
+
+                    return (
+                      <div key={sectionId} className="mb-6">
+                        {renderIntrakurikulerHeader()}
+                        {(sec.type !== "text" || sec.Section !== "") && (
+                          <div className="font-bold text-sm mt-4 mb-2 text-black">
+                            {sec.Section}
+                          </div>
+                        )}
+
+                        {sec.type === 'table_text' && (() => {
+                          let headers = sec.Headers?.length ? sec.Headers : sec.headers?.length ? sec.headers : ["Pernyataan", "Nilai", "Predikat", "Keterangan"];
+                          if (headers.length === 0 || headers[0]?.toLowerCase() !== "no") headers = ["No", ...headers];
+
+                          // colCount = number of columns excluding No
+                          const colCount = headers.filter((h: string) => h.toLowerCase().trim() !== "no").length;
+
+                          // Build value cells for second row based on positional logic
+                          const renderValueCells = (row: any) => {
+                            const cells: JSX.Element[] = [];
+                            if (colCount >= 4) {
+                              cells.push(
+                                <td key="answer" className="border border-black p-2 text-center align-middle font-bold">{row.answer || ''}</td>
+                              );
+                              cells.push(
+                                <td key="predikat" className="border border-black p-2 text-center align-middle font-bold">{row.predikat || ''}</td>
+                              );
+                              cells.push(
+                                <td key="ket" className="border border-black p-2 text-left align-top whitespace-pre-wrap">{row.Ket || ''}</td>
+                              );
+                            } else if (colCount === 3) {
+                              cells.push(
+                                <td key="answer" className="border border-black p-2 text-center align-middle font-bold">{row.answer || ''}</td>
+                              );
+                              cells.push(
+                                <td key="ket" className="border border-black p-2 text-left align-top whitespace-pre-wrap">{row.Ket || ''}</td>
+                              );
+                            } else if (colCount === 2) {
+                              cells.push(
+                                <td key="ket" className="border border-black p-2 text-left align-top whitespace-pre-wrap">{row.Ket || ''}</td>
+                              );
+                            }
+                            return cells;
+                          };
+
+                          return (
+                            <table className="w-full border-collapse mb-5 text-xs text-black border border-black">
+                              <thead>
+                                <tr>
+                                  {headers.map((h: string, hIdx: number) => (
+                                    <th key={hIdx} className="border border-black p-2 text-center font-bold bg-[#e5e7eb] text-black">{h}</th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {(sectionData?.rows || []).map((row: any, rIdx: number) => (
+                                  <Fragment key={rIdx}>
+                                    <tr className="bg-[#f2f2f2] font-bold">
+                                      <td className="border border-black p-2 text-center w-10">{rIdx + 1}</td>
+                                      <td colSpan={headers.length - 1} className="border border-black p-2 text-left">{row.Question}</td>
+                                    </tr>
+                                    <tr className="bg-white">
+                                      <td className="border border-black"></td>
+                                      <td className="border border-black"></td>
+                                      {renderValueCells(row)}
+                                    </tr>
+                                  </Fragment>
+                                ))}
+                              </tbody>
+                            </table>
+                          );
+                        })()}
+
+                        {sec.type === 'table' && (() => {
+                          let headers = sec.Headers?.length ? sec.Headers : sec.headers?.length ? sec.headers : ["Pernyataan", "Nilai", "Predikat", "Keterangan"];
+                          if (headers.length === 0 || headers[0]?.toLowerCase() !== "no") headers = ["No", ...headers];
+
+                          const colCount = headers.filter((h: string) => h.toLowerCase().trim() !== "no").length;
+
+                          const renderCell = (header: string, row: any, rowIndex: number, colIndex: number) => {
+                            const key = header?.toLowerCase()?.trim();
+                            if (key === "no") {
+                              return (
+                                <td key={header} className="border border-black p-2 text-center w-10">
+                                  {rowIndex + 1}
+                                </td>
+                              );
+                            }
+
+                            const nonNoIndex = colIndex - (headers[0]?.toLowerCase().trim() === "no" ? 1 : 0);
+
+                            // First column after No = Question (read-only)
+                            if (nonNoIndex === 0) {
+                              return (
+                                <td key={header} className="border border-black p-2 text-left align-top">
+                                  {row.Question || ""}
+                                </td>
+                              );
+                            }
+
+                            // Positional: 4 cols = Question, answer, predikat, Ket
+                            // 3 cols = Question, answer, Ket
+                            // 2 cols = Question, Ket
+                            if (colCount >= 4) {
+                              if (nonNoIndex === 1) return <td key={header} className="border border-black p-2 text-center align-middle font-bold">{row.answer || ""}</td>;
+                              if (nonNoIndex === 2) return <td key={header} className="border border-black p-2 text-center align-middle font-bold">{row.predikat || ""}</td>;
+                              if (nonNoIndex === 3) return <td key={header} className="border border-black p-2 text-left align-top whitespace-pre-wrap">{row.Ket || ""}</td>;
+                            } else if (colCount === 3) {
+                              if (nonNoIndex === 1) return <td key={header} className="border border-black p-2 text-center align-middle font-bold">{row.answer || ""}</td>;
+                              if (nonNoIndex === 2) return <td key={header} className="border border-black p-2 text-left align-top whitespace-pre-wrap">{row.Ket || ""}</td>;
+                            } else if (colCount === 2) {
+                              if (nonNoIndex === 1) return <td key={header} className="border border-black p-2 text-left align-top whitespace-pre-wrap">{row.Ket || ""}</td>;
+                            }
+
+                            return (
+                              <td key={header} className="border border-black p-2 text-left align-top">-</td>
+                            );
+                          };
+
+                          return (
+                            <table className="w-full border-collapse mb-5 text-xs text-black border border-black">
+                              <thead>
+                                <tr>
+                                  {headers.map((h: string, hIdx: number) => (
+                                    <th key={hIdx} className="border border-black p-2 text-center font-bold bg-[#e5e7eb] text-black">{h}</th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {(sectionData?.rows || []).map((row: any, rIdx: number) => (
+                                  <tr key={rIdx} className="bg-white">
+                                    {headers.map((h: string, colIdx: number) => renderCell(h, row, rIdx, colIdx))}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          );
+                        })()}
+
+                        {sec.type === 'text' && (
+                          <>
+                            {(sectionData?.items || []).map((item: any, qIdx: number) => (
+                              <div key={qIdx} className="relative border-2 border-sky-500 bg-white rounded-xl p-6 pt-8 mt-8 mb-4">
+                                <div className="absolute -top-[14px] left-6 bg-sky-500 text-white px-5 py-0.5 rounded-[20px] font-bold text-[13px] uppercase shadow-sm">
+                                  {item.Question || sec.Questions?.[qIdx]?.Question || ''}
+                                </div>
+
+                                {item.text && item.text.trim() !== '' && (
+                                  <div className="text-[14px] whitespace-pre-wrap leading-[1.6] mb-4">
+                                    {item.text}
+                                  </div>
+                                )}
+
+                                {item.photos && item.photos.length > 0 && (
+                                  <div className="flex flex-wrap gap-[15px] justify-center mt-4">
+                                    {item.photos.map((pf: string, pIdx: number) => (
+                                      <div key={pIdx} className="w-[45%] max-w-[300px] border border-slate-200 bg-slate-50 rounded-lg p-2 flex flex-col items-center">
+                                        <img src={getImageUrl(pf)} className="max-w-full max-h-[250px] object-contain rounded" alt="Dokumentasi" />
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             </div>
           </div>
@@ -392,6 +434,12 @@ export const StudentReportDialog = ({
             <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
               Tutup
             </Button>
+            {onExportDocx && report && (
+              <Button onClick={() => onExportDocx(report)} variant="outline" className="w-full sm:w-auto border-blue-500 text-blue-600 hover:bg-blue-50">
+                <FileText className="w-4 h-4 mr-2" />
+                Export Word (DOCX)
+              </Button>
+            )}
             {onDownload && report && (
               <Button onClick={() => onDownload(report)} className="w-full sm:w-auto">
                 <Download className="w-4 h-4 mr-2" />

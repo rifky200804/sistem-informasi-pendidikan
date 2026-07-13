@@ -34,9 +34,9 @@ export interface UpdateDocumentData {
 }
 
 export const documentService = {
-  async getAll(page = 1, pageSize = 10): Promise<PaginatedResult<Document>> {
+  async getAll(page = 1, pageSize = 10, category?: string, search?: string): Promise<PaginatedResult<Document>> {
     const response = await api.get<ApiResponse<PaginatedData<Document>>>('/documents', {
-      params: { page, pageSize }
+      params: { page, pageSize, category, search }
     });
     return response.data.data;
   },

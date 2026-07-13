@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, User, Edit, Trash2 } from "lucide-react";
@@ -13,7 +14,9 @@ const Students = () => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<StudentType | undefined>();
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const { students, pagination, page, pageSize, setPage, setPageSize, loading, createStudent, updateStudent, deleteStudent } = useStudents();
+  const [searchParams] = useSearchParams();
+  const classNameFilter = searchParams.get("className") || undefined;
+  const { students, pagination, page, pageSize, setPage, setPageSize, loading, createStudent, updateStudent, deleteStudent, search, setSearch } = useStudents(classNameFilter);
 
   const handleCreate = async (data: CreateStudentData) => {
     await createStudent(data);
@@ -97,10 +100,7 @@ const Students = () => {
       </div>
 
       <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-foreground">Daftar Murid</h2>
-          <p className="text-sm text-muted-foreground">Total: {pagination?.totalItems ?? students.length} murid</p>
-        </div>
+
         <DataTable
           data={students}
           columns={studentColumns}
@@ -108,6 +108,8 @@ const Students = () => {
           onPageChange={setPage}
           onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
           loading={loading}
+          searchQuery={search}
+          onSearchChange={setSearch}
         />
       </Card>
 
@@ -116,6 +118,7 @@ const Students = () => {
         onOpenChange={handleFormClose}
         onSubmit={selectedStudent ? handleUpdate : handleCreate}
         student={selectedStudent}
+        defaultClassName={classNameFilter}
       />
 
       <DeleteConfirmDialog

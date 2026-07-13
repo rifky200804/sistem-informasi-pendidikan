@@ -30,9 +30,9 @@ export interface CreateStudentData {
 export interface UpdateStudentData extends Partial<CreateStudentData> {}
 
 export const studentService = {
-  async getAll(page = 1, pageSize = 10): Promise<PaginatedResult<Student>> {
+  async getAll(page = 1, pageSize = 10, className?: string, search?: string): Promise<PaginatedResult<Student>> {
     const response = await api.get<ApiResponse<PaginatedData<Student>>>('/students', {
-      params: { page, pageSize }
+      params: { page, pageSize, className, search }
     });
     return response.data.data;
   },

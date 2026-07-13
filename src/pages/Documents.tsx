@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Download, Calendar, Trash2, Eye, Edit } from "lucide-react";
@@ -19,7 +20,9 @@ const Documents = () => {
   const [selectedDocument, setSelectedDocument] = useState<DocumentType | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<DocumentType | null>(null);
-  const { documents, pagination, page, pageSize, setPage, setPageSize, loading, uploadDocument, updateDocument, deleteDocument, downloadDocument } = useDocuments();
+  const [searchParams] = useSearchParams();
+  const categoryFilter = searchParams.get("category") || undefined;
+  const { documents, pagination, page, pageSize, setPage, setPageSize, loading, uploadDocument, updateDocument, deleteDocument, downloadDocument, search, setSearch } = useDocuments(categoryFilter);
 
   const handleUpload = async (data: any) => {
     await uploadDocument(data);
@@ -147,10 +150,7 @@ const Documents = () => {
       </div>
 
       <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-foreground">Daftar Dokumen</h2>
-          <p className="text-sm text-muted-foreground">Total: {pagination?.totalItems ?? documents.length} dokumen</p>
-        </div>
+
         <DataTable
           data={documents}
           columns={documentColumns}
@@ -158,6 +158,8 @@ const Documents = () => {
           onPageChange={setPage}
           onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
           loading={loading}
+          searchQuery={search}
+          onSearchChange={setSearch}
         />
       </Card>
 
@@ -165,6 +167,7 @@ const Documents = () => {
         open={uploadFormOpen}
         onOpenChange={setUploadFormOpen}
         onSubmit={handleUpload}
+        defaultCategory={categoryFilter}
       />
 
       <DocumentEditForm

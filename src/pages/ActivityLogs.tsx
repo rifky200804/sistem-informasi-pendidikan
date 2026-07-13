@@ -149,15 +149,7 @@ const ActivityLogs = () => {
       </div>
 
       <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Activity className="w-5 h-5 text-primary" />
-            <h2 className="text-xl font-semibold text-foreground">Riwayat Aktivitas</h2>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Total: {logs.length} aktivitas
-          </p>
-        </div>
+
         <DataTable
           data={logs}
           columns={columns}

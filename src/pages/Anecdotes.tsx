@@ -118,10 +118,7 @@ const Anecdotes = () => {
       </div>
 
       <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-foreground">Catatan Anekdot Terbaru</h2>
-          <p className="text-sm text-muted-foreground">Total: {pagination?.totalItems ?? anecdotes.length} catatan</p>
-        </div>
+
         <DataTable
           data={anecdotes}
           columns={anecdoteColumns}

@@ -18,7 +18,7 @@ const APE = () => {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [selectedAPE, setSelectedAPE] = useState<APEType | undefined>();
   const [deleteId, setDeleteId] = useState<number | string>("");
-  const { apeList, pagination, page, pageSize, setPage, setPageSize, loading, createAPE, updateAPE, deleteAPE } = useAPE();
+  const { apeList, pagination, page, pageSize, setPage, setPageSize, loading, search, setSearch, createAPE, updateAPE, deleteAPE } = useAPE();
 
   const handleCreate = async (data: CreateAPEData) => {
     await createAPE(data);
@@ -135,12 +135,7 @@ const APE = () => {
       </div>
 
       <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-foreground">Daftar APE</h2>
-          <p className="text-sm text-muted-foreground">
-            Total: {apeList.reduce((acc, item) => acc + item.quantity, 0)} unit dari {apeList.length} jenis
-          </p>
-        </div>
+
         <DataTable
           data={apeList}
           columns={apeColumns}
@@ -148,6 +143,8 @@ const APE = () => {
           onPageChange={setPage}
           onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
           loading={loading}
+          searchQuery={search}
+          onSearchChange={setSearch}
         />
       </Card>
 

@@ -3,20 +3,21 @@ import { documentService, Document, CreateDocumentData, UpdateDocumentData } fro
 import { Pagination } from '@/types/api';
 import { useToast } from '@/hooks/use-toast';
 
-export const useDocuments = () => {
+export const useDocuments = (category?: string) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
   const { toast } = useToast();
 
   const fetchDocuments = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const result = await documentService.getAll(page, pageSize);
+      const result = await documentService.getAll(page, pageSize, category, search);
       setDocuments(result.data);
       setPagination(result.pagination);
     } catch (err) {
@@ -26,7 +27,7 @@ export const useDocuments = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize]);
+  }, [page, pageSize, category, search]);
 
   const uploadDocument = async (data: CreateDocumentData) => {
     try {
@@ -92,6 +93,10 @@ export const useDocuments = () => {
   };
 
   useEffect(() => {
+    setPage(1);
+  }, [category, search]);
+
+  useEffect(() => {
     fetchDocuments();
   }, [fetchDocuments]);
 
@@ -104,6 +109,8 @@ export const useDocuments = () => {
     setPageSize,
     loading,
     error,
+    search,
+    setSearch,
     fetchDocuments,
     uploadDocument,
     updateDocument,

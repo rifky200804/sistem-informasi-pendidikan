@@ -267,8 +267,7 @@ export default function Reports() {
       </div>
 
       <Card className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-foreground">Laporan Terbaru</h2>
+        <div className="flex items-center justify-end mb-6">
           <div className="flex gap-2">
             <Button variant="outline" size="sm">
               <Calendar className="w-4 h-4 mr-2" />

@@ -17,7 +17,7 @@ const Teachers = () => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | undefined>();
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const { teachers, pagination, page, pageSize, setPage, setPageSize, loading, createTeacher, updateTeacher, deleteTeacher } = useTeachers();
+  const { teachers, pagination, page, pageSize, setPage, setPageSize, loading, createTeacher, updateTeacher, deleteTeacher, search, setSearch } = useTeachers();
   const { toast } = useToast();
 
   const handleCreate = async (data: CreateTeacherData) => {
@@ -102,10 +102,7 @@ const Teachers = () => {
       </div>
 
       <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-foreground">Daftar Guru</h2>
-          <p className="text-sm text-muted-foreground">Total: {pagination?.totalItems ?? teachers.length} guru</p>
-        </div>
+
         <DataTable
           data={teachers}
           columns={teacherColumns}
@@ -113,6 +110,8 @@ const Teachers = () => {
           onPageChange={setPage}
           onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
           loading={loading}
+          searchQuery={search}
+          onSearchChange={setSearch}
         />
       </Card>
 

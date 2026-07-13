@@ -10,13 +10,14 @@ export const useAPE = () => {
   const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
   const { toast } = useToast();
 
   const fetchAPE = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const result = await apeService.getAll(page, pageSize);
+      const result = await apeService.getAll(page, pageSize, search);
       setApeList(result.data);
       setPagination(result.pagination);
     } catch (err) {
@@ -26,7 +27,7 @@ export const useAPE = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize]);
+  }, [page, pageSize, search]);
 
   const createAPE = async (data: CreateAPEData) => {
     try {
@@ -71,6 +72,10 @@ export const useAPE = () => {
   };
 
   useEffect(() => {
+    setPage(1);
+  }, [search]);
+
+  useEffect(() => {
     fetchAPE();
   }, [fetchAPE]);
 
@@ -83,6 +88,8 @@ export const useAPE = () => {
     setPageSize,
     loading,
     error,
+    search,
+    setSearch,
     fetchAPE,
     createAPE,
     updateAPE,

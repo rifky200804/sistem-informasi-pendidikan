@@ -23,9 +23,9 @@ export interface CreateTeacherData {
 export interface UpdateTeacherData extends Partial<CreateTeacherData> {}
 
 export const teacherService = {
-  async getAll(page = 1, pageSize = 10): Promise<PaginatedResult<Teacher>> {
+  async getAll(page = 1, pageSize = 10, search?: string): Promise<PaginatedResult<Teacher>> {
     const response = await api.get<ApiResponse<PaginatedData<Teacher>>>('/users', {
-      params: { page, pageSize }
+      params: { page, pageSize, search }
     });
     return response.data.data;
   },

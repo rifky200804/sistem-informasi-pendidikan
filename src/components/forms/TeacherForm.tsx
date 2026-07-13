@@ -29,11 +29,21 @@ import {
 } from "@/components/ui/select";
 import { CreateTeacherData, Teacher } from "@/services/teacherService";
 
-const teacherSchema = z.object({
+const createTeacherSchema = z.object({
   name: z.string().min(1, "Nama wajib diisi"),
   email: z.string().email("Email tidak valid"),
   role: z.enum(["ADMIN", "KEPALA_SEKOLAH", "GURU"]),
-  password: z.string().optional(),
+  password: z.string().min(6, "Password minimal 6 karakter"),
+});
+
+const editTeacherSchema = z.object({
+  name: z.string().min(1, "Nama wajib diisi"),
+  email: z.string().email("Email tidak valid"),
+  role: z.enum(["ADMIN", "KEPALA_SEKOLAH", "GURU"]),
+  password: z.string().optional().refine(
+    (val) => !val || val.length >= 6,
+    "Password minimal 6 karakter"
+  ),
 });
 
 interface TeacherFormProps {
@@ -44,8 +54,10 @@ interface TeacherFormProps {
 }
 
 export function TeacherForm({ open, onOpenChange, onSubmit, teacher }: TeacherFormProps) {
+  const schema = teacher ? editTeacherSchema : createTeacherSchema;
+  
   const form = useForm<CreateTeacherData>({
-    resolver: zodResolver(teacherSchema),
+    resolver: zodResolver(schema),
     defaultValues: teacher || {
       name: "",
       email: "",
@@ -66,7 +78,11 @@ export function TeacherForm({ open, onOpenChange, onSubmit, teacher }: TeacherFo
   }, [open, teacher, form]);
 
   const handleSubmit = async (data: CreateTeacherData) => {
-    await onSubmit(data);
+    const cleanedData = { ...data };
+    if (teacher && (!cleanedData.password || cleanedData.password.trim() === "")) {
+      delete cleanedData.password;
+    }
+    await onSubmit(cleanedData);
     form.reset();
     onOpenChange(false);
   };

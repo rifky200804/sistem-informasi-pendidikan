@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -49,6 +49,8 @@ interface DataTableProps<T> {
   loading?: boolean;
   defaultPageSize?: number;
   hidePageSizeSelector?: boolean;
+  searchQuery?: string;
+  onSearchChange?: (search: string) => void;
 }
 
 export function DataTable<T extends Record<string, any>>({
@@ -63,9 +65,26 @@ export function DataTable<T extends Record<string, any>>({
   loading = false,
   defaultPageSize = 10,
   hidePageSizeSelector = false,
+  searchQuery,
+  onSearchChange,
 }: DataTableProps<T>) {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [localSearchTerm, setLocalSearchTerm] = useState('');
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
+
+  const searchTerm = searchQuery !== undefined ? searchQuery : localSearchTerm;
+  const setSearchTerm = onSearchChange !== undefined ? onSearchChange : setLocalSearchTerm;
+
+  // Local state for input value to avoid lag and prevent hitting API on every keypress
+  const [searchInputValue, setSearchInputValue] = useState(searchTerm);
+
+  // Sync input value if search query is changed externally (e.g. from reset)
+  useEffect(() => {
+    setSearchInputValue(searchTerm);
+  }, [searchTerm]);
+
+  const handleSearchSubmit = () => {
+    setSearchTerm(searchInputValue);
+  };
 
   // Client-side pagination state (used when no server pagination)
   const [clientPage, setClientPage] = useState(1);
@@ -94,6 +113,9 @@ export function DataTable<T extends Record<string, any>>({
 
   // Client-side filtering
   const filteredData = useMemo(() => {
+    const isServerPaginated = !!pagination;
+    const shouldFilterClientSide = !isServerPaginated || onSearchChange === undefined;
+
     return data.filter((item) => {
       // 1. Check Select Filters
       let passesSelectFilters = true;
@@ -109,7 +131,7 @@ export function DataTable<T extends Record<string, any>>({
       if (!passesSelectFilters) return false;
 
       // 2. Check Text Search
-      if (!searchTerm) return true;
+      if (!searchTerm || !shouldFilterClientSide) return true;
 
       return columns.some((column) => {
         if (column.filterable === false) return false;
@@ -123,7 +145,7 @@ export function DataTable<T extends Record<string, any>>({
         return false;
       });
     });
-  }, [data, searchTerm, activeFilters, columns]);
+  }, [data, searchTerm, activeFilters, columns, pagination, onSearchChange]);
 
   // Reset client page when filters change
   useMemo(() => {
@@ -208,22 +230,32 @@ export function DataTable<T extends Record<string, any>>({
     }));
   };
 
-  const hasActiveFilters = searchTerm !== '' || Object.values(activeFilters).some(v => v !== 'all' && v !== '');
+  const hasActiveFilters = searchTerm !== '' || searchInputValue !== '' || Object.values(activeFilters).some(v => v !== 'all' && v !== '');
 
   return (
     <div className="space-y-4">
       {/* Search Bar with Column Filters */}
       {searchable && (
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative flex-1 min-w-[200px] max-w-sm">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder={searchPlaceholder}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+          <div className="flex items-center gap-2 max-w-sm w-full">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder={searchPlaceholder}
+                value={searchInputValue}
+                onChange={(e) => setSearchInputValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearchSubmit();
+                  }
+                }}
+                className="pl-10"
+              />
+            </div>
+            <Button onClick={handleSearchSubmit}>
+              Cari
+            </Button>
           </div>
           
           {selectFilterColumns.map(col => {
@@ -254,6 +286,7 @@ export function DataTable<T extends Record<string, any>>({
               variant="ghost"
               size="sm"
               onClick={() => {
+                setSearchInputValue('');
                 setSearchTerm('');
                 setActiveFilters({});
               }}

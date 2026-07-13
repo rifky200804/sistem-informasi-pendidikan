@@ -26,9 +26,9 @@ export interface CreateAPEData {
 export type UpdateAPEData = Partial<CreateAPEData>;
 
 export const apeService = {
-  async getAll(page = 1, pageSize = 10): Promise<PaginatedResult<APE>> {
+  async getAll(page = 1, pageSize = 10, search = ''): Promise<PaginatedResult<APE>> {
     const response = await api.get<ApiResponse<PaginatedData<APE>>>('/ape', {
-      params: { page, pageSize }
+      params: { page, pageSize, search }
     });
     return response.data.data;
   },

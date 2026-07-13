@@ -7,18 +7,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { authService } from "@/services/auth";
+import { AlertCircle } from "lucide-react";
 
 export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMsg("");
 
     try {
       await authService.login({
@@ -31,19 +33,19 @@ export default function Login() {
         description: "Selamat datang kembali!",
       });
       navigate("/");
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      const message = "Email atau password salah";
+      setErrorMsg(message);
       toast({
         title: "Login Gagal",
-        description: error instanceof Error ? error.message : "Email atau password salah",
+        description: message,
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
-
-
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
@@ -61,6 +63,12 @@ export default function Login() {
             </TabsList>
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-4">
+                {errorMsg && (
+                  <div className="bg-red-50 text-red-700 text-sm p-3 rounded-lg border-2 border-red-500 font-semibold flex items-center gap-2 shadow-sm" id="login-error-message">
+                    <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
+                    <span>{errorMsg}</span>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="login-email">Email</Label>
                   <Input
@@ -90,7 +98,6 @@ export default function Login() {
                 </Button>
               </form>
             </TabsContent>
-
           </Tabs>
         </CardContent>
       </Card>

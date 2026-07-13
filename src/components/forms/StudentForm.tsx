@@ -46,16 +46,17 @@ interface StudentFormProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: CreateStudentData) => Promise<void>;
   student?: Student;
+  defaultClassName?: string;
 }
 
-export function StudentForm({ open, onOpenChange, onSubmit, student }: StudentFormProps) {
+export function StudentForm({ open, onOpenChange, onSubmit, student, defaultClassName }: StudentFormProps) {
   const form = useForm<CreateStudentData>({
     resolver: zodResolver(studentSchema),
     defaultValues: student || {
       name: "",
       identifier: "",
       nisn: "",
-      className: "",
+      className: defaultClassName || "",
       tahunAjaran: "",
       parentName: "",
       parentPhone: "",
@@ -69,14 +70,14 @@ export function StudentForm({ open, onOpenChange, onSubmit, student }: StudentFo
         name: "",
         identifier: "",
         nisn: "",
-        className: "",
+        className: defaultClassName || "",
         tahunAjaran: "",
         parentName: "",
         parentPhone: "",
         address: "",
       });
     }
-  }, [open, student, form]);
+  }, [open, student, defaultClassName, form]);
 
   const handleSubmit = async (data: CreateStudentData) => {
     await onSubmit(data);
@@ -140,9 +141,18 @@ export function StudentForm({ open, onOpenChange, onSubmit, student }: StudentFo
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Kelas</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Contoh: A" {...field} />
-                  </FormControl>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih kelas" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="A">Kelas A</SelectItem>
+                      <SelectItem value="B">Kelas B</SelectItem>
+                      <SelectItem value="C">Kelas C</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

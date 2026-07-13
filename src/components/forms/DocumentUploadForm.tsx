@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,13 +10,23 @@ interface DocumentUploadFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: any) => void;
+  defaultCategory?: string;
 }
 
-export const DocumentUploadForm = ({ open, onOpenChange, onSubmit }: DocumentUploadFormProps) => {
+export const DocumentUploadForm = ({ open, onOpenChange, onSubmit, defaultCategory }: DocumentUploadFormProps) => {
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState(defaultCategory || "");
   const [documentDate, setDocumentDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [file, setFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setTitle("");
+      setCategory(defaultCategory || "");
+      setDocumentDate(new Date().toISOString().split('T')[0]);
+      setFile(null);
+    }
+  }, [open, defaultCategory]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -38,7 +48,7 @@ export const DocumentUploadForm = ({ open, onOpenChange, onSubmit }: DocumentUpl
 
   const handleReset = () => {
     setTitle("");
-    setCategory("");
+    setCategory(defaultCategory || "");
     setDocumentDate(new Date().toISOString().split('T')[0]);
     setFile(null);
   };
@@ -55,15 +65,9 @@ export const DocumentUploadForm = ({ open, onOpenChange, onSubmit }: DocumentUpl
     "Administrasi",
     "Akademik",
     "Keuangan",
-    "Kepegawaian",
     "Laporan",
-    "Rapor",
     "Sertifikat",
     "Surat",
-    "Notulen",
-    "Inventaris",
-    "Panduan",
-    "Evaluasi",
     "Dokumentasi",
     "Lainnya"
   ];

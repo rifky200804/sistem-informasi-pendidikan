@@ -3,20 +3,21 @@ import { studentService, Student, CreateStudentData, UpdateStudentData } from '@
 import { Pagination } from '@/types/api';
 import { useToast } from '@/hooks/use-toast';
 
-export const useStudents = () => {
+export const useStudents = (className?: string) => {
   const [students, setStudents] = useState<Student[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
   const { toast } = useToast();
 
   const fetchStudents = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const result = await studentService.getAll(page, pageSize);
+      const result = await studentService.getAll(page, pageSize, className, search);
       setStudents(result.data);
       setPagination(result.pagination);
     } catch (err) {
@@ -26,7 +27,7 @@ export const useStudents = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize]);
+  }, [page, pageSize, className, search]);
 
   const createStudent = async (data: CreateStudentData) => {
     try {
@@ -71,6 +72,10 @@ export const useStudents = () => {
   };
 
   useEffect(() => {
+    setPage(1);
+  }, [className, search]);
+
+  useEffect(() => {
     fetchStudents();
   }, [fetchStudents]);
 
@@ -83,6 +88,8 @@ export const useStudents = () => {
     setPageSize,
     loading,
     error,
+    search,
+    setSearch,
     fetchStudents,
     createStudent,
     updateStudent,

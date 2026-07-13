@@ -10,13 +10,14 @@ export const useTeachers = () => {
   const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
   const { toast } = useToast();
 
   const fetchTeachers = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const result = await teacherService.getAll(page, pageSize);
+      const result = await teacherService.getAll(page, pageSize, search);
       setTeachers(result.data);
       setPagination(result.pagination);
     } catch (err) {
@@ -26,7 +27,7 @@ export const useTeachers = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize]);
+  }, [page, pageSize, search]);
 
   const createTeacher = async (data: CreateTeacherData) => {
     try {
@@ -71,6 +72,10 @@ export const useTeachers = () => {
   };
 
   useEffect(() => {
+    setPage(1);
+  }, [search]);
+
+  useEffect(() => {
     fetchTeachers();
   }, [fetchTeachers]);
 
@@ -83,6 +88,8 @@ export const useTeachers = () => {
     setPageSize,
     loading,
     error,
+    search,
+    setSearch,
     fetchTeachers,
     createTeacher,
     updateTeacher,

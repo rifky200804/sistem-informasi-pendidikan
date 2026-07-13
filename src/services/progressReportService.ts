@@ -157,8 +157,10 @@ function dataURLtoFile(dataurl: string, filename: string): File | null {
 }
 
 export const progressReportService = {
-  async getAll(): Promise<ProgressReportListItem[]> {
-    const response = await api.get<ApiResponse<ProgressReportListItem[]>>('/reports/student-reports');
+  async getAll(className?: string, search?: string): Promise<ProgressReportListItem[]> {
+    const response = await api.get<ApiResponse<ProgressReportListItem[]>>('/reports/student-reports', {
+      params: { className, search }
+    });
     return response.data.data;
   },
 

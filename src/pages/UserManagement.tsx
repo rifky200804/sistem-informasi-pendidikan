@@ -288,10 +288,7 @@ export default function UserManagement() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Daftar User</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <DataTable columns={columns} data={users} />
         </CardContent>
       </Card>
