@@ -2,18 +2,20 @@ import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, User, Edit, Trash2 } from "lucide-react";
+import { Plus, User, Edit, Trash2, Download, Loader2 } from "lucide-react";
 import { DataTable, Column } from "@/components/base/DataTable";
 import { StudentForm } from "@/components/forms/StudentForm";
 import { DeleteConfirmDialog } from "@/components/dialogs/DeleteConfirmDialog";
 import { useStudents } from "@/hooks/useStudents";
-import { CreateStudentData, Student as StudentType } from "@/services/studentService";
+import { CreateStudentData, Student as StudentType, studentService } from "@/services/studentService";
+import { toast } from "sonner";
 
 const Students = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<StudentType | undefined>();
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [searchParams] = useSearchParams();
   const classNameFilter = searchParams.get("className") || undefined;
   const { students, pagination, page, pageSize, setPage, setPageSize, loading, createStudent, updateStudent, deleteStudent, search, setSearch } = useStudents(classNameFilter);
@@ -50,6 +52,22 @@ const Students = () => {
   const handleFormClose = () => {
     setIsFormOpen(false);
     setSelectedStudent(undefined);
+  };
+
+  const handleDownload = async () => {
+    try {
+      setIsDownloading(true);
+      await studentService.download({
+        className: classNameFilter,
+        search: search || undefined,
+      });
+      toast.success("Data murid berhasil diunduh!");
+    } catch (error) {
+      toast.error("Gagal mengunduh data murid.");
+      console.error(error);
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const studentColumns: Column<StudentType>[] = [
@@ -93,10 +111,24 @@ const Students = () => {
           <h1 className="text-3xl font-bold text-foreground">Data Murid</h1>
           <p className="text-muted-foreground">Kelola data murid dan siswa</p>
         </div>
-        <Button onClick={() => setIsFormOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Tambah Murid
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleDownload}
+            disabled={isDownloading}
+          >
+            {isDownloading ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4 mr-2" />
+            )}
+            Download Data
+          </Button>
+          <Button onClick={() => setIsFormOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Tambah Murid
+          </Button>
+        </div>
       </div>
 
       <Card className="p-6">

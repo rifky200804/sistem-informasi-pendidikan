@@ -92,13 +92,15 @@ const ActivityLogs = () => {
     },
     {
       key: "userId",
-      header: "User ID",
+      header: "Pengguna",
       render: (item) => (
         <div className="flex items-center gap-1.5">
           <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
             <User className="w-3 h-3 text-primary" />
           </div>
-          <span className="text-sm font-medium">{item.userId}</span>
+          <span className="text-sm font-medium">
+            {item.userName || item.user?.name || `User #${item.userId}`}
+          </span>
         </div>
       ),
     },

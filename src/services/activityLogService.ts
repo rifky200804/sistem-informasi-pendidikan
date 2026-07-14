@@ -8,6 +8,8 @@ export interface ActivityLog {
   metadata: Record<string, any> | null;
   createdAt: string;
   userId: number;
+  userName?: string;
+  user?: { id: number; name: string };
 }
 
 interface ActivityLogApiResponse {

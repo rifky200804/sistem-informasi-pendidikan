@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import JSZip from "jszip";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -237,6 +238,153 @@ const Soal = () => {
 
 
 
+  const handleExportDocx = async (subject?: Subject) => {
+    let targetSubject = subject || editingSubject;
+    if (!targetSubject) return;
+
+    if (subject && (!subject.questions || subject.questions.length === 0)) {
+      try {
+        toast.info("Mengambil detail soal...");
+        targetSubject = await soalService.getById(subject.id);
+      } catch (e) {
+        toast.error("Gagal mengambil detail soal.");
+        return;
+      }
+    }
+
+    toast.info("Memproses berkas Word...");
+
+    // Helper konversi URL gambar ke base64
+    const toBase64 = async (url: string): Promise<string> => {
+      try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+      } catch { return ''; }
+    };
+
+    const getImgWidthPct = (size: string) => {
+      switch (size) {
+        case 'small': return '25%';
+        case 'medium': return '50%';
+        case 'large': return '75%';
+        case 'full': return '100%';
+        default: return '50%';
+      }
+    };
+
+    let htmlContent = `
+      <html>
+      <head>
+        <meta charset="UTF-8" />
+        <style>
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          body { font-family: Arial, sans-serif; margin: 0; padding: 0; color: #000; }
+          .header { text-align: center; font-size: 18pt; font-weight: bold; margin-bottom: 24pt; border-bottom: 2pt solid #000; padding-bottom: 12pt; }
+          .identity { margin-bottom: 24pt; }
+          .id-row { display: flex; margin-bottom: 10pt; font-size: 12pt; align-items: flex-end; }
+          .id-label { width: 55pt; font-weight: bold; }
+          .id-sep { width: 12pt; }
+          .id-line { flex: 1; border-bottom: 1pt dotted #000; max-width: 250pt; height: 16pt; }
+          .question { margin-bottom: 24pt; page-break-inside: avoid; }
+          .q-row { display: flex; gap: 8pt; }
+          .q-num { font-weight: bold; font-size: 12pt; min-width: 20pt; }
+          .q-content { flex: 1; }
+          .q-img-wrap { text-align: center; margin-bottom: 12pt; }
+          .q-text { font-size: 12pt; line-height: 1.6; white-space: pre-wrap; text-align: justify; }
+        </style>
+      </head>
+      <body>
+        <div class="header">UJIAN: ${targetSubject.section.toUpperCase()}</div>
+        <div class="identity">
+          <div class="id-row"><div class="id-label">Nama</div><div class="id-sep">:</div><div class="id-line"></div></div>
+          <div class="id-row"><div class="id-label">Kelas</div><div class="id-sep">:</div><div class="id-line"></div></div>
+        </div>
+    `;
+
+    for (let idx = 0; idx < (targetSubject.questions || []).length; idx++) {
+      const q = targetSubject.questions![idx];
+      htmlContent += `<div class="question"><div class="q-row"><div class="q-num">${idx + 1}.</div><div class="q-content">`;
+
+      if (q.imageUrl) {
+        let imgSrc = '';
+        if (q.imageUrl instanceof File) {
+          imgSrc = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(q.imageUrl as File);
+          });
+        } else {
+          imgSrc = await toBase64(getFileUrl(q.imageUrl));
+        }
+        if (imgSrc) {
+          htmlContent += `<div class="q-img-wrap"><img src="${imgSrc}" style="width:${getImgWidthPct(q.imageSize || 'medium')};max-width:100%;object-fit:contain;" /></div>`;
+        }
+      }
+
+      if (q.text) {
+        htmlContent += `<div class="q-text">${q.text}</div>`;
+      }
+
+      htmlContent += `</div></div></div>`;
+    }
+
+    htmlContent += `</body></html>`;
+
+    try {
+      const zip = new JSZip();
+
+      zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Default Extension="html" ContentType="text/html"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+</Types>`);
+
+      zip.file("_rels/.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>`);
+
+      zip.file("word/document.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <w:body>
+    <w:altChunk r:id="htmlChunk" />
+    <w:sectPr>
+      <w:pgSz w:w="11906" w:h="16838" />
+      <w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="720" w:footer="720" w:gutter="0" />
+    </w:sectPr>
+  </w:body>
+</w:document>`);
+
+      zip.file("word/_rels/document.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="htmlChunk" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/aFChunk" Target="afchunk.html" />
+</Relationships>`);
+
+      zip.file("word/afchunk.html", '\ufeff' + htmlContent);
+
+      const blob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Soal_${targetSubject.section.replace(/\s+/g, '_')}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Berkas Word berhasil didownload!");
+    } catch (e) {
+      toast.error("Gagal mengexport Word.");
+      console.error(e);
+    }
+  };
+
   const handleDownloadPdf = async (subject?: Subject) => {
     let targetSubject = subject || editingSubject;
     if (!targetSubject) return;
@@ -262,6 +410,10 @@ const Soal = () => {
       <head>
         <title>Soal ${targetSubject.section}</title>
         <style>
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
           @page { size: A4; margin: 0; }
           body { font-family: Arial, sans-serif; margin: 0; padding: 20mm; color: #000; box-sizing: border-box; }
           .header { text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 40px; border-bottom: 2px solid black; padding-bottom: 20px; }
@@ -340,6 +492,10 @@ const Soal = () => {
               <Button variant="outline" onClick={() => handleDownloadPdf()} className="flex items-center gap-1">
                 <Download className="w-4 h-4" />
                 Download PDF
+              </Button>
+              <Button variant="outline" onClick={() => handleExportDocx()} className="flex items-center gap-1">
+                <Download className="w-4 h-4" />
+                Download DOCX
               </Button>
               <Button onClick={() => setPreviewAllOpen(true)} variant="outline">
                 <Eye className="w-4 h-4 mr-2" />
@@ -664,9 +820,13 @@ const Soal = () => {
                 })(); }} title="Preview Soal" className="text-gray-600 hover:bg-gray-100 border-gray-200 h-8 px-2 text-xs">
                   <Eye className="w-3.5 h-3.5 mr-1" /> Preview
                 </Button>
-                <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleDownloadPdf(subject); }} title="Download Soal" className="h-8 px-2 text-xs">
+                <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleDownloadPdf(subject); }} title="Download PDF" className="h-8 px-2 text-xs">
                   <Download className="w-3.5 h-3.5 mr-1" />
-                  Download PDF
+                  PDF
+                </Button>
+                <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleExportDocx(subject); }} title="Download DOCX" className="h-8 px-2 text-xs">
+                  <Download className="w-3.5 h-3.5 mr-1" />
+                  DOCX
                 </Button>
                 <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDeleteList(subject.id); }} title="Hapus Topik" className="h-8 w-8 p-0">
                   <Trash2 className="w-4 h-4 text-destructive" />

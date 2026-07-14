@@ -13,6 +13,7 @@ import { reportTemplateService } from "@/services/reportTemplateService";
 import { Section } from "@/types/reportTemplate";
 import { getFileUrl } from "@/lib/fileUrl";
 import { toast } from "sonner";
+import JSZip from "jszip";
 
 const ProgressReports = () => {
   const [reports, setReports] = useState<ProgressReportListItem[]>([]);
@@ -321,6 +322,10 @@ const ProgressReports = () => {
                   <head>
                     <title>Rapor_${item.student?.name || 'Siswa'}</title>
                     <style>
+                      * {
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                      }
                       @page { size: legal; margin: 0; }
                       body { font-family: Arial, sans-serif; margin: 0; padding: 0; color: #000; box-sizing: border-box; }
                       .header { text-align: center; font-size: 20px; font-weight: bold; margin-top: 10px; margin-bottom: 5px; }
@@ -526,6 +531,44 @@ const ProgressReports = () => {
     }
   };
 
+  // Hanya badge oval yang digambar sebagai PNG (kotak tetap HTML).
+  const createBadgeImage = (text: string): string => {
+    const scale = 2;
+    const badgeH = 28;
+    const badgeR = 14;
+    const badgePadH = 18;
+    const badgeFontSize = 12;
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d')!;
+    tempCtx.font = `bold ${badgeFontSize}px Arial`;
+    const badgeTextW = tempCtx.measureText(text.toUpperCase()).width;
+    const badgeW = Math.ceil(badgeTextW + badgePadH * 2);
+    const canvas = document.createElement('canvas');
+    canvas.width = badgeW * scale;
+    canvas.height = badgeH * scale;
+    const ctx = canvas.getContext('2d')!;
+    ctx.scale(scale, scale);
+    ctx.fillStyle = '#0ea5e9';
+    ctx.beginPath();
+    ctx.moveTo(badgeR, 0);
+    ctx.lineTo(badgeW - badgeR, 0);
+    ctx.quadraticCurveTo(badgeW, 0, badgeW, badgeR);
+    ctx.lineTo(badgeW, badgeH - badgeR);
+    ctx.quadraticCurveTo(badgeW, badgeH, badgeW - badgeR, badgeH);
+    ctx.lineTo(badgeR, badgeH);
+    ctx.quadraticCurveTo(0, badgeH, 0, badgeH - badgeR);
+    ctx.lineTo(0, badgeR);
+    ctx.quadraticCurveTo(0, 0, badgeR, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${badgeFontSize}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text.toUpperCase(), badgeW / 2, badgeH / 2);
+    return canvas.toDataURL('image/png');
+  };
+
   const handleExportDocx = async (item: ProgressReportListItem) => {
     try {
       toast.info("Memproses berkas Word...");
@@ -557,7 +600,7 @@ const ProgressReports = () => {
             .sub-header { text-align: center; font-size: 14pt; font-weight: bold; margin-bottom: 30px; }
             .info-table { margin-bottom: 25px; font-size: 11pt; border-collapse: collapse; width: auto; }
             .info-table td { padding: 4px 0; }
-            .intrakurikuler-header { font-weight: bold; font-size: 13pt; margin-top: 25px; margin-bottom: 12px; }
+            .intrakurikuler-header { font-weight: bold; font-size: 13pt; margin-top: 25px; margin-bottom: 12px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; }
             .section-title { font-weight: bold; font-size: 11pt; margin-top: 15px; margin-bottom: 6px; }
             table.data-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10pt; border: 1px solid #cbd5e1; }
             table.data-table th, table.data-table td { border: 1px solid #cbd5e1; padding: 6px 8px; }
@@ -566,7 +609,7 @@ const ProgressReports = () => {
             .white-row { background-color: #ffffff; }
             .text-catatan { border: 1px solid #000; padding: 15px; margin-bottom: 15px; min-height: 100px; font-size: 11pt; }
             .text-section-container { border: 2px solid #0ea5e9; background-color: #ffffff; border-radius: 8px; position: relative; padding: 20px; margin-top: 25px; margin-bottom: 15px; }
-            .text-section-badge { font-weight: bold; font-size: 11pt; color: #0ea5e9; text-transform: uppercase; margin-bottom: 8px; }
+            .text-section-badge { display: inline-block; background-color: #0ea5e9; color: #ffffff; padding: 4px 15px; border-radius: 15px; font-weight: bold; font-size: 10pt; text-transform: uppercase; margin-bottom: 10px; }
             .text-content-wrap { font-size: 11pt; line-height: 1.5; margin-bottom: 15px; }
             .photo-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin-top: 15px; }
             .photo-item { width: 45%; max-width: 300px; padding: 5px; text-align: center; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; }
@@ -592,9 +635,9 @@ const ProgressReports = () => {
         if (sec.type === 'table_text') {
           if (!hasRenderedIntrakurikulerHeader) {
             hasRenderedIntrakurikulerHeader = true;
-            htmlContent += `<div class="intrakurikuler-header">A. INTRAKURIKULER</div>`;
+            htmlContent += `<div class="intrakurikuler-header" style="font-weight: bold; font-size: 13pt; margin-top: 25px; margin-bottom: 12px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">A. INTRAKURIKULER</div>`;
           }
-          htmlContent += `<div class="section-title">${sec.Section}</div>`;
+          htmlContent += `<div class="section-title" style="font-weight: bold; font-size: 11pt; margin-top: 15px; margin-bottom: 6px;">${sec.Section}</div>`;
           let headers = ["No", "Pernyataan", "Nilai", "Predikat", "Keterangan"];
           const tSec = activeData.find((t: any) => t.Section === sec.Section);
           if (tSec) {
@@ -606,27 +649,27 @@ const ProgressReports = () => {
 
           const colCount = headers.filter(h => h.toLowerCase().trim() !== "no").length;
 
-          htmlContent += `<table class="data-table"><thead><tr>`;
-          headers.forEach(h => htmlContent += `<th>${h}</th>`);
+          htmlContent += `<table class="data-table" style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10pt; border: 1px solid #cbd5e1;"><thead><tr>`;
+          headers.forEach(h => htmlContent += `<th style="background-color: #5b9bd5; color: #ffffff; text-align: center; font-weight: bold; border: 1px solid #cbd5e1; padding: 6px 8px;">${h}</th>`);
           htmlContent += `</tr></thead><tbody>`;
 
           sec.Questions.forEach((q, qIdx) => {
-            htmlContent += `<tr class="gray-row">
-                         <td style="text-align: center; width: 40px;">${qIdx + 1}</td>
-                         <td colspan="${headers.length - 1}">${q.Question || ''}</td>
+            htmlContent += `<tr class="gray-row" style="background-color: #f2f2f2; font-weight: bold;">
+                         <td style="text-align: center; width: 40px; border: 1px solid #cbd5e1; padding: 6px 8px;">${qIdx + 1}</td>
+                         <td colspan="${headers.length - 1}" style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left;">${q.Question || ''}</td>
                        </tr>`;
-            htmlContent += `<tr class="white-row">
-                         <td></td>
-                         <td></td>`;
+            htmlContent += `<tr class="white-row" style="background-color: #ffffff;">
+                         <td style="border: 1px solid #cbd5e1; padding: 6px 8px;"></td>
+                         <td style="border: 1px solid #cbd5e1; padding: 6px 8px;"></td>`;
             if (colCount >= 4) {
-              htmlContent += `<td style="text-align: center; font-weight: bold; vertical-align: middle;">${q.answer || ''}</td>`;
-              htmlContent += `<td style="text-align: center; font-weight: bold; vertical-align: middle;">${q.predikat || ''}</td>`;
-              htmlContent += `<td style="vertical-align: top; white-space: pre-wrap;">${q.Ket || ''}</td>`;
+              htmlContent += `<td style="text-align: center; font-weight: bold; vertical-align: middle; border: 1px solid #cbd5e1; padding: 6px 8px;">${q.answer || ''}</td>`;
+              htmlContent += `<td style="text-align: center; font-weight: bold; vertical-align: middle; border: 1px solid #cbd5e1; padding: 6px 8px;">${q.predikat || ''}</td>`;
+              htmlContent += `<td style="vertical-align: top; white-space: pre-wrap; border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left;">${q.Ket || ''}</td>`;
             } else if (colCount === 3) {
-              htmlContent += `<td style="text-align: center; font-weight: bold; vertical-align: middle;">${q.answer || ''}</td>`;
-              htmlContent += `<td style="vertical-align: top; white-space: pre-wrap;">${q.Ket || ''}</td>`;
+              htmlContent += `<td style="text-align: center; font-weight: bold; vertical-align: middle; border: 1px solid #cbd5e1; padding: 6px 8px;">${q.answer || ''}</td>`;
+              htmlContent += `<td style="vertical-align: top; white-space: pre-wrap; border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left;">${q.Ket || ''}</td>`;
             } else if (colCount === 2) {
-              htmlContent += `<td style="vertical-align: top; white-space: pre-wrap;">${q.Ket || ''}</td>`;
+              htmlContent += `<td style="vertical-align: top; white-space: pre-wrap; border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left;">${q.Ket || ''}</td>`;
             }
             htmlContent += `</tr>`;
           });
@@ -635,9 +678,9 @@ const ProgressReports = () => {
         } else if (sec.type === 'table') {
           if (!hasRenderedIntrakurikulerHeader) {
             hasRenderedIntrakurikulerHeader = true;
-            htmlContent += `<div class="intrakurikuler-header">A. INTRAKURIKULER</div>`;
+            htmlContent += `<div class="intrakurikuler-header" style="font-weight: bold; font-size: 13pt; margin-top: 25px; margin-bottom: 12px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">A. INTRAKURIKULER</div>`;
           }
-          htmlContent += `<div class="section-title">${sec.Section}</div>`;
+          htmlContent += `<div class="section-title" style="font-weight: bold; font-size: 11pt; margin-top: 15px; margin-bottom: 6px;">${sec.Section}</div>`;
           let headers = ["No", "Pernyataan", "Nilai", "Predikat", "Keterangan"];
           const tSec = activeData.find((t: any) => t.Section === sec.Section);
           if (tSec) {
@@ -649,35 +692,35 @@ const ProgressReports = () => {
 
           const tblColCount = headers.filter(h => h.toLowerCase().trim() !== "no").length;
 
-          htmlContent += `<table class="data-table"><thead><tr>`;
-          headers.forEach(h => htmlContent += `<th>${h}</th>`);
+          htmlContent += `<table class="data-table" style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10pt; border: 1px solid #cbd5e1;"><thead><tr>`;
+          headers.forEach(h => htmlContent += `<th style="background-color: #5b9bd5; color: #ffffff; text-align: center; font-weight: bold; border: 1px solid #cbd5e1; padding: 6px 8px;">${h}</th>`);
           htmlContent += `</tr></thead><tbody>`;
 
           sec.Questions.forEach((q, qIdx) => {
-            htmlContent += `<tr class="white-row">`;
+            htmlContent += `<tr class="white-row" style="background-color: #ffffff;">`;
             const hasNo = headers[0]?.toLowerCase().trim() === "no";
             headers.forEach((h, hIdx) => {
               const key = h.toLowerCase().trim();
               if (key === 'no') {
-                htmlContent += `<td style="text-align: center; width: 40px;">${qIdx + 1}</td>`;
+                htmlContent += `<td style="text-align: center; width: 40px; border: 1px solid #cbd5e1; padding: 6px 8px;">${qIdx + 1}</td>`;
               } else {
                 const nonNoIdx = hIdx - (hasNo ? 1 : 0);
                 if (nonNoIdx === 0) {
-                  htmlContent += `<td style="text-align: left;">${q.Question || ''}</td>`;
+                  htmlContent += `<td style="text-align: left; border: 1px solid #cbd5e1; padding: 6px 8px;">${q.Question || ''}</td>`;
                 } else if (tblColCount >= 4) {
-                  if (nonNoIdx === 1) htmlContent += `<td style="text-align: center; font-weight: bold;">${q.answer || ''}</td>`;
-                  else if (nonNoIdx === 2) htmlContent += `<td style="text-align: center; font-weight: bold;">${q.predikat || ''}</td>`;
-                  else if (nonNoIdx === 3) htmlContent += `<td style="text-align: left; white-space: pre-wrap;">${q.Ket || ''}</td>`;
-                  else htmlContent += `<td style="text-align: left;">-</td>`;
+                  if (nonNoIdx === 1) htmlContent += `<td style="text-align: center; font-weight: bold; border: 1px solid #cbd5e1; padding: 6px 8px;">${q.answer || ''}</td>`;
+                  else if (nonNoIdx === 2) htmlContent += `<td style="text-align: center; font-weight: bold; border: 1px solid #cbd5e1; padding: 6px 8px;">${q.predikat || ''}</td>`;
+                  else if (nonNoIdx === 3) htmlContent += `<td style="text-align: left; white-space: pre-wrap; border: 1px solid #cbd5e1; padding: 6px 8px;">${q.Ket || ''}</td>`;
+                  else htmlContent += `<td style="text-align: left; border: 1px solid #cbd5e1; padding: 6px 8px;">-</td>`;
                 } else if (tblColCount === 3) {
-                  if (nonNoIdx === 1) htmlContent += `<td style="text-align: center; font-weight: bold;">${q.answer || ''}</td>`;
-                  else if (nonNoIdx === 2) htmlContent += `<td style="text-align: left; white-space: pre-wrap;">${q.Ket || ''}</td>`;
-                  else htmlContent += `<td style="text-align: left;">-</td>`;
+                  if (nonNoIdx === 1) htmlContent += `<td style="text-align: center; font-weight: bold; border: 1px solid #cbd5e1; padding: 6px 8px;">${q.answer || ''}</td>`;
+                  else if (nonNoIdx === 2) htmlContent += `<td style="text-align: left; white-space: pre-wrap; border: 1px solid #cbd5e1; padding: 6px 8px;">${q.Ket || ''}</td>`;
+                  else htmlContent += `<td style="text-align: left; border: 1px solid #cbd5e1; padding: 6px 8px;">-</td>`;
                 } else if (tblColCount === 2) {
-                  if (nonNoIdx === 1) htmlContent += `<td style="text-align: left; white-space: pre-wrap;">${q.Ket || ''}</td>`;
-                  else htmlContent += `<td style="text-align: left;">-</td>`;
+                  if (nonNoIdx === 1) htmlContent += `<td style="text-align: left; white-space: pre-wrap; border: 1px solid #cbd5e1; padding: 6px 8px;">${q.Ket || ''}</td>`;
+                  else htmlContent += `<td style="text-align: left; border: 1px solid #cbd5e1; padding: 6px 8px;">-</td>`;
                 } else {
-                  htmlContent += `<td style="text-align: left;">-</td>`;
+                  htmlContent += `<td style="text-align: left; border: 1px solid #cbd5e1; padding: 6px 8px;">-</td>`;
                 }
               }
             });
@@ -686,16 +729,21 @@ const ProgressReports = () => {
 
           htmlContent += `</tbody></table>`;
         } else if (sec.type === 'text') {
-          htmlContent += `<div class="section-title">${sec.Section}</div>`;
+          htmlContent += `<div class="section-title" style="font-weight: bold; font-size: 11pt; margin-top: 15px; margin-bottom: 6px;">${sec.Section}</div>`;
           (sec.Questions || []).forEach((q) => {
             if (q) {
-              htmlContent += `<div class="text-section-container">`;
-              htmlContent += `<div class="text-section-badge">${q.Question}</div>`;
+              const badgeDataUrl = createBadgeImage(q.Question);
+              // Kotak sebagai HTML, badge sebagai PNG oval
+              htmlContent += `<div style="border: 2px solid #0ea5e9; background-color: #ffffff; padding: 10px 20px 20px 16px; margin-top: 20px; margin-bottom: 15px;">
+                <div style="margin-bottom: 12px;">
+                  <img src="${badgeDataUrl}" style="height: 28px; display: inline-block;" alt="${q.Question}" />
+                </div>`;
 
               if (q.Ket && q.Ket.trim() !== '') {
-                htmlContent += `<div class="text-content-wrap">${q.Ket}</div>`;
+                htmlContent += `<div style="font-size: 11pt; line-height: 1.5; white-space: pre-wrap;">${q.Ket}</div>`;
               }
 
+              // Foto dokumentasi
               let photos: any[] = [];
               if (Array.isArray(q.photos)) photos = q.photos;
               else if (q.photo) photos = [q.photo];
@@ -709,6 +757,7 @@ const ProgressReports = () => {
                 });
                 htmlContent += `</div>`;
               }
+
               htmlContent += `</div>`;
             }
           });
@@ -720,13 +769,49 @@ const ProgressReports = () => {
         </html>
       `;
 
-      const blob = new Blob(['\ufeff' + htmlContent], {
-        type: 'application/msword'
-      });
+      const zip = new JSZip();
+
+      // [Content_Types].xml
+      zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Default Extension="html" ContentType="text/html"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+</Types>`);
+
+      // _rels/.rels
+      zip.file("_rels/.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>`);
+
+      // word/document.xml
+      zip.file("word/document.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <w:body>
+    <w:altChunk r:id="htmlChunk" />
+    <w:sectPr>
+      <w:pgSz w:w="12240" w:h="20160" /> <!-- US Legal Size -->
+      <w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="720" w:footer="720" w:gutter="0" />
+    </w:sectPr>
+  </w:body>
+</w:document>`);
+
+      // word/_rels/document.xml.rels
+      zip.file("word/_rels/document.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="htmlChunk" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/aFChunk" Target="afchunk.html" />
+</Relationships>`);
+
+      // word/afchunk.html
+      zip.file("word/afchunk.html", '\ufeff' + htmlContent);
+
+      const blob = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Rapor_${item.student?.name || 'Siswa'}.doc`;
+      a.download = `Rapor_${item.student?.name || 'Siswa'}.docx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
