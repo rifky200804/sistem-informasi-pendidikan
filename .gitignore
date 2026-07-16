@@ -23,3 +23,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# User Guide
+/user_guide
+/public/user_guide
+
+# Temporary MS Office files
+~$*.docx
+~$*.doc

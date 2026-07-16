@@ -125,8 +125,10 @@ const ProgressReports = () => {
 
       const templates = await reportTemplateService.getAll();
       const activeTemplateData = templates[0]?.data || [];
-      detail.data.forEach((sec: any) => {
-        const tSec = activeTemplateData.find((t: any) => t.Section === sec.Section);
+      detail.data.forEach((sec: any, idx: number) => {
+        const tSec = sec.Section 
+          ? (activeTemplateData.find((t: any) => t.Section === sec.Section) || activeTemplateData[idx])
+          : activeTemplateData[idx];
         if (tSec) {
           sec.type = tSec.type;
           sec.Headers = tSec.Headers || tSec.headers;
@@ -380,7 +382,7 @@ const ProgressReports = () => {
                 `;
 
       let hasRenderedIntrakurikulerHeader = false;
-      detail.data.forEach((sec) => {
+      detail.data.forEach((sec, idx) => {
         if (sec.type === 'table_text') {
           if (!hasRenderedIntrakurikulerHeader) {
             hasRenderedIntrakurikulerHeader = true;
@@ -388,11 +390,13 @@ const ProgressReports = () => {
           }
           htmlContent += `<div class="section-title">${sec.Section}</div>`;
           let headers = ["No", "Pernyataan", "Nilai", "Predikat", "Keterangan"];
-          const tSec = activeData.find((t: any) => t.Section === sec.Section);
+          const tSec = sec.Section 
+            ? (activeData.find((t: any) => t.Section === sec.Section) || activeData[idx])
+            : activeData[idx];
           if (tSec) {
             let customHeaders = tSec.Headers?.length ? tSec.Headers : tSec.headers?.length ? tSec.headers : [];
             if (customHeaders.length > 0) {
-              headers = customHeaders[0].toLowerCase() !== "no" ? ["No", ...customHeaders] : customHeaders;
+               headers = customHeaders[0].toLowerCase() !== "no" ? ["No", ...customHeaders] : customHeaders;
             }
           }
 
@@ -433,7 +437,9 @@ const ProgressReports = () => {
           }
           htmlContent += `<div class="section-title">${sec.Section}</div>`;
           let headers = ["No", "Pernyataan", "Nilai", "Predikat", "Keterangan"];
-          const tSec = activeData.find((t: any) => t.Section === sec.Section);
+          const tSec = sec.Section 
+            ? (activeData.find((t: any) => t.Section === sec.Section) || activeData[idx])
+            : activeData[idx];
           if (tSec) {
             const customHeaders = tSec.Headers?.length ? tSec.Headers : tSec.headers?.length ? tSec.headers : [];
             if (customHeaders.length > 0) {
@@ -631,7 +637,7 @@ const ProgressReports = () => {
       `;
 
       let hasRenderedIntrakurikulerHeader = false;
-      detail.data.forEach((sec) => {
+      detail.data.forEach((sec, idx) => {
         if (sec.type === 'table_text') {
           if (!hasRenderedIntrakurikulerHeader) {
             hasRenderedIntrakurikulerHeader = true;
@@ -639,7 +645,9 @@ const ProgressReports = () => {
           }
           htmlContent += `<div class="section-title" style="font-weight: bold; font-size: 11pt; margin-top: 15px; margin-bottom: 6px;">${sec.Section}</div>`;
           let headers = ["No", "Pernyataan", "Nilai", "Predikat", "Keterangan"];
-          const tSec = activeData.find((t: any) => t.Section === sec.Section);
+          const tSec = sec.Section 
+            ? (activeData.find((t: any) => t.Section === sec.Section) || activeData[idx])
+            : activeData[idx];
           if (tSec) {
             let customHeaders = tSec.Headers?.length ? tSec.Headers : tSec.headers?.length ? tSec.headers : [];
             if (customHeaders.length > 0) {
@@ -682,7 +690,9 @@ const ProgressReports = () => {
           }
           htmlContent += `<div class="section-title" style="font-weight: bold; font-size: 11pt; margin-top: 15px; margin-bottom: 6px;">${sec.Section}</div>`;
           let headers = ["No", "Pernyataan", "Nilai", "Predikat", "Keterangan"];
-          const tSec = activeData.find((t: any) => t.Section === sec.Section);
+          const tSec = sec.Section 
+            ? (activeData.find((t: any) => t.Section === sec.Section) || activeData[idx])
+            : activeData[idx];
           if (tSec) {
             const customHeaders = tSec.Headers?.length ? tSec.Headers : tSec.headers?.length ? tSec.headers : [];
             if (customHeaders.length > 0) {

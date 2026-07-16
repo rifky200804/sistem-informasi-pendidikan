@@ -831,6 +831,18 @@ export const StudentReportDialog = ({
             <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
               Tutup
             </Button>
+            {onExportDocx && report && (
+              <Button onClick={() => onExportDocx(report)} variant="outline" className="w-full sm:w-auto border-blue-500 text-blue-600 hover:bg-blue-50">
+                <FileText className="w-4 h-4 mr-2" />
+                Export Word (DOCX)
+              </Button>
+            )}
+            {onDownload && report && (
+              <Button onClick={() => onDownload(report)} variant="outline" className="w-full sm:w-auto border-green-500 text-green-600 hover:bg-green-50">
+                <Download className="w-4 h-4 mr-2" />
+                Cetak / Download PDF
+              </Button>
+            )}
             {!readOnly && (
               <Button onClick={handleSave} className="w-full sm:w-auto">
                 <Save className="w-4 h-4 mr-2" />
@@ -838,6 +850,7 @@ export const StudentReportDialog = ({
               </Button>
             )}
           </DialogFooter>
+
         </DialogContent>
       </Dialog>
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Upload, FileText, Download, Calendar, Trash2, Eye, Edit } from "lucide-
 import { DataTable, Column } from "@/components/base/DataTable";
 import { Badge } from "@/components/ui/badge";
 import { getFileUrl } from "@/lib/fileUrl";
+import { documentService } from "@/services/documentService";
 import { DocumentUploadForm } from "@/components/forms/DocumentUploadForm";
 import { DocumentEditForm } from "@/components/forms/DocumentEditForm";
 import { DeleteConfirmDialog } from "@/components/dialogs/DeleteConfirmDialog";
@@ -68,6 +69,8 @@ const Documents = () => {
       setPreviewOpen(true);
     }
   };
+
+
 
   const handleDownload = async (doc: any) => {
     const fullDocument = documents.find(d => d.id === doc.id);
@@ -247,6 +250,16 @@ const Documents = () => {
               Tutup
             </Button>
             {previewDoc && (
+              <Button
+                variant="outline"
+                className="border-green-500 text-green-600 hover:bg-green-50"
+                onClick={() => handleDownload(previewDoc)}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download
+              </Button>
+            )}
+            {previewDoc && (
               <Button 
                 onClick={() => {
                   if (previewDoc.filePath) {
@@ -263,6 +276,7 @@ const Documents = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
     </div>
   );
 };
