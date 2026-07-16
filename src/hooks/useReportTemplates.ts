@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { reportTemplateService, ReportTemplate, CreateReportTemplateData, UpdateReportTemplateData } from '@/services/reportTemplateService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -8,14 +8,14 @@ export const useReportTemplates = () => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const fetchTemplates = async () => {
+  const fetchTemplates = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await reportTemplateService.getAll();
-      setTemplates(data);
+      const result = await reportTemplateService.getAll();
+      setTemplates(result);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Gagal mengambil data template';
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal mengambil data template'));
       setError(errorMessage);
       toast({
         title: "Error",
@@ -25,7 +25,7 @@ export const useReportTemplates = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const createTemplate = async (data: CreateReportTemplateData) => {
     try {
@@ -38,7 +38,7 @@ export const useReportTemplates = () => {
       });
       return newTemplate;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Gagal menambahkan template';
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal menambahkan template'));
       setError(errorMessage);
       toast({
         title: "Error",
@@ -60,7 +60,7 @@ export const useReportTemplates = () => {
       });
       return updatedTemplate;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Gagal mengupdate template';
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal mengupdate template'));
       setError(errorMessage);
       toast({
         title: "Error",
@@ -81,7 +81,7 @@ export const useReportTemplates = () => {
         description: "Template berhasil dihapus",
       });
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Gagal menghapus template';
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal menghapus template'));
       setError(errorMessage);
       toast({
         title: "Error",
@@ -94,7 +94,7 @@ export const useReportTemplates = () => {
 
   useEffect(() => {
     fetchTemplates();
-  }, []);
+  }, [fetchTemplates]);
 
   return {
     templates,

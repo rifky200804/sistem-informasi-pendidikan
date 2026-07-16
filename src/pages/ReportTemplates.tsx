@@ -12,7 +12,8 @@ import { ReportTemplateForm } from "@/components/forms/ReportTemplateForm";
 
 const ReportTemplates = () => {
   const { templates, loading, createTemplate, updateTemplate } = useReportTemplates();
-  const activeTemplate = templates[0];
+  const [localTemplateDraft, setLocalTemplateDraft] = useState<ReportTemplate | null>(null);
+  const activeTemplate = localTemplateDraft || templates[0];
 
   const [templateFormOpen, setTemplateFormOpen] = useState(false);
   const [editingTemplateData, setEditingTemplateData] = useState<ReportTemplate | null>(null);
@@ -28,11 +29,14 @@ const ReportTemplates = () => {
         id: sec.id || `section-${index}-${Date.now()}`
       }));
       setLocalSections(initialSections);
+    } else {
+      setLocalSections([]);
     }
   }, [activeTemplate]);
 
   const hasChanges = (() => {
     if (!activeTemplate) return false;
+    if (localTemplateDraft) return true;
     const cleanLocal = localSections.map(({ id, ...rest }) => rest);
     const cleanActive = (activeTemplate.data || []).map(({ id, ...rest }) => rest);
     return JSON.stringify(cleanLocal) !== JSON.stringify(cleanActive);
@@ -44,11 +48,12 @@ const ReportTemplates = () => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedSection, setSelectedSection] = useState<Section | null>(null);
 
-  const handleCreateTemplate = async (data: any) => {
-    try {
-      await createTemplate(data);
-      setTemplateFormOpen(false);
-    } catch (e) { }
+  const handleCreateTemplate = (data: any) => {
+    setLocalTemplateDraft({
+      ...data,
+      data: []
+    });
+    setTemplateFormOpen(false);
   };
 
   const getFormattedSections = (sections: Section[]) => {
@@ -96,10 +101,18 @@ const ReportTemplates = () => {
   const handleUpdateTemplateInfo = async (data: any) => {
     try {
       if (activeTemplate) {
-        await updateTemplate(activeTemplate.id || "", {
-          ...data,
-          data: getFormattedSections(localSections)
-        });
+        if (activeTemplate.id) {
+          await updateTemplate(activeTemplate.id || "", {
+            ...data,
+            data: getFormattedSections(localSections)
+          });
+        } else {
+          setLocalTemplateDraft({
+            ...localTemplateDraft,
+            ...data,
+            data: getFormattedSections(localSections)
+          });
+        }
       }
       setTemplateFormOpen(false);
       setEditingTemplateData(null);
@@ -153,10 +166,16 @@ const ReportTemplates = () => {
       const payload = {
         title: activeTemplate.title,
         year: activeTemplate.year,
-        data: getFormattedSections(localSections)
+        data: getFormattedSections(localSections),
+        isActive: activeTemplate.isActive ?? true
       };
 
-      await updateTemplate(activeTemplate.id || "", payload);
+      if (activeTemplate.id) {
+        await updateTemplate(activeTemplate.id || "", payload);
+      } else {
+        await createTemplate(payload);
+        setLocalTemplateDraft(null);
+      }
     } catch (e) {
     } finally {
       setIsSavingSections(false);
@@ -252,12 +271,29 @@ const ReportTemplates = () => {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-foreground">Section Template</h2>
                 <div className="flex items-center gap-2">
+                  {localTemplateDraft && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setLocalTemplateDraft(null);
+                        setLocalSections([]);
+                      }}
+                      className="text-destructive border-destructive hover:bg-destructive/10"
+                    >
+                      Batal Draft
+                    </Button>
+                  )}
                   <Button
                     variant={hasChanges ? "default" : "secondary"}
                     disabled={!hasChanges || isSavingSections}
                     onClick={handleSimpanSemuaPerubahan}
                   >
-                    {isSavingSections ? "Menyimpan..." : "Simpan Perubahan"}
+                    {isSavingSections
+                      ? "Menyimpan..."
+                      : localTemplateDraft
+                        ? "Simpan Template"
+                        : "Simpan Perubahan"
+                    }
                   </Button>
                   <Button onClick={handleAddSection} variant="outline">
                     <Plus className="w-4 h-4 mr-2" />

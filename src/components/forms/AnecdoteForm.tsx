@@ -108,9 +108,22 @@ export function AnecdoteForm({ open, onOpenChange, onSubmit, anecdote }: Anecdot
   };
 
   const handleSubmit = async (data: CreateAnecdoteData) => {
-    await onSubmit(data);
-    form.reset();
-    onOpenChange(false);
+    try {
+      await onSubmit(data);
+      form.reset();
+      onOpenChange(false);
+    } catch (err: any) {
+      if (err && err.errors && err.errors.fieldErrors) {
+        Object.entries(err.errors.fieldErrors).forEach(([field, messages]) => {
+          const fieldName = field as any;
+          const msg = Array.isArray(messages) ? messages[0] : String(messages);
+          form.setError(fieldName, {
+            type: "server",
+            message: msg
+          });
+        });
+      }
+    }
   };
 
   return (

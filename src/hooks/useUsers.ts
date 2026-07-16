@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { userService, User, CreateUserData, UpdateUserData } from '@/services/userService';
 import { toast } from '@/hooks/use-toast';
 
@@ -7,24 +7,24 @@ export function useUsers() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await userService.getAll();
       setUsers(data);
     } catch (err) {
-      const error = err as Error;
-      setError(error);
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal mengambil data user'));
+      setError(err as Error);
       toast({
-        title: 'Gagal memuat data user',
-        description: error.message,
+        title: 'Gagal mengambil data user',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const createUser = async (data: CreateUserData) => {
     setLoading(true);
@@ -38,14 +38,14 @@ export function useUsers() {
       });
       return newUser;
     } catch (err) {
-      const error = err as Error;
-      setError(error);
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal menambahkan user'));
+      setError(err as Error);
       toast({
         title: 'Gagal menambahkan user',
-        description: error.message,
+        description: errorMessage,
         variant: 'destructive',
       });
-      throw error;
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -63,14 +63,14 @@ export function useUsers() {
       });
       return updatedUser;
     } catch (err) {
-      const error = err as Error;
-      setError(error);
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal mengupdate user'));
+      setError(err as Error);
       toast({
         title: 'Gagal mengupdate user',
-        description: error.message,
+        description: errorMessage,
         variant: 'destructive',
       });
-      throw error;
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -87,14 +87,14 @@ export function useUsers() {
         description: 'User telah dihapus dari sistem.',
       });
     } catch (err) {
-      const error = err as Error;
-      setError(error);
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal menghapus user'));
+      setError(err as Error);
       toast({
         title: 'Gagal menghapus user',
-        description: error.message,
+        description: errorMessage,
         variant: 'destructive',
       });
-      throw error;
+      throw err;
     } finally {
       setLoading(false);
     }

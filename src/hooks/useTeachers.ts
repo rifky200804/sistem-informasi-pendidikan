@@ -21,7 +21,7 @@ export const useTeachers = () => {
       setTeachers(result.data);
       setPagination(result.pagination);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Gagal mengambil data guru';
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal mengambil data guru'));
       setError(errorMessage);
       toast({ title: "Error", description: errorMessage, variant: "destructive" });
     } finally {
@@ -36,7 +36,7 @@ export const useTeachers = () => {
       toast({ title: "Berhasil", description: "Data guru berhasil ditambahkan" });
       fetchTeachers();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Gagal menambahkan guru';
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal menambahkan guru'));
       setError(errorMessage);
       toast({ title: "Error", description: errorMessage, variant: "destructive" });
       throw err;
@@ -50,7 +50,7 @@ export const useTeachers = () => {
       toast({ title: "Berhasil", description: "Data guru berhasil diupdate" });
       fetchTeachers();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Gagal mengupdate guru';
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal mengupdate guru'));
       setError(errorMessage);
       toast({ title: "Error", description: errorMessage, variant: "destructive" });
       throw err;
@@ -64,7 +64,7 @@ export const useTeachers = () => {
       toast({ title: "Berhasil", description: "Data guru berhasil dihapus" });
       fetchTeachers();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Gagal menghapus guru';
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal menghapus guru'));
       setError(errorMessage);
       toast({ title: "Error", description: errorMessage, variant: "destructive" });
       throw err;

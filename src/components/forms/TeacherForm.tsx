@@ -82,9 +82,22 @@ export function TeacherForm({ open, onOpenChange, onSubmit, teacher }: TeacherFo
     if (teacher && (!cleanedData.password || cleanedData.password.trim() === "")) {
       delete cleanedData.password;
     }
-    await onSubmit(cleanedData);
-    form.reset();
-    onOpenChange(false);
+    try {
+      await onSubmit(cleanedData);
+      form.reset();
+      onOpenChange(false);
+    } catch (err: any) {
+      if (err && err.errors && err.errors.fieldErrors) {
+        Object.entries(err.errors.fieldErrors).forEach(([field, messages]) => {
+          const fieldName = field as any;
+          const msg = Array.isArray(messages) ? messages[0] : String(messages);
+          form.setError(fieldName, {
+            type: "server",
+            message: msg
+          });
+        });
+      }
+    }
   };
 
   return (

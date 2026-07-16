@@ -21,7 +21,7 @@ export const useDocuments = (category?: string) => {
       setDocuments(result.data);
       setPagination(result.pagination);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Gagal mengambil data dokumen';
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal mengambil data dokumen'));
       setError(errorMessage);
       toast({ title: "Error", description: errorMessage, variant: "destructive" });
     } finally {
@@ -29,14 +29,14 @@ export const useDocuments = (category?: string) => {
     }
   }, [page, pageSize, category, search]);
 
-  const uploadDocument = async (data: CreateDocumentData) => {
+  const uploadDocument = async (data: any) => {
     try {
       setError(null);
       await documentService.create(data);
       toast({ title: "Berhasil", description: "Dokumen berhasil diupload" });
       fetchDocuments();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Gagal upload dokumen';
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal upload dokumen'));
       setError(errorMessage);
       toast({ title: "Error", description: errorMessage, variant: "destructive" });
       throw err;
@@ -50,7 +50,7 @@ export const useDocuments = (category?: string) => {
       toast({ title: "Berhasil", description: "Data dokumen berhasil diupdate" });
       fetchDocuments();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Gagal mengupdate dokumen';
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal mengupdate dokumen'));
       setError(errorMessage);
       toast({ title: "Error", description: errorMessage, variant: "destructive" });
       throw err;
@@ -64,7 +64,7 @@ export const useDocuments = (category?: string) => {
       toast({ title: "Berhasil", description: "Dokumen berhasil dihapus" });
       fetchDocuments();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Gagal menghapus dokumen';
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal menghapus dokumen'));
       setError(errorMessage);
       toast({ title: "Error", description: errorMessage, variant: "destructive" });
       throw err;
@@ -85,7 +85,7 @@ export const useDocuments = (category?: string) => {
       document.body.removeChild(a);
       toast({ title: "Berhasil", description: "Dokumen berhasil didownload" });
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Gagal download dokumen';
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal download dokumen'));
       setError(errorMessage);
       toast({ title: "Error", description: errorMessage, variant: "destructive" });
       throw err;

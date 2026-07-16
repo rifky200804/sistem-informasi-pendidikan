@@ -21,7 +21,7 @@ export const useAPE = () => {
       setApeList(result.data);
       setPagination(result.pagination);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Gagal mengambil data APE';
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal mengambil data APE'));
       setError(errorMessage);
       toast({ title: "Error", description: errorMessage, variant: "destructive" });
     } finally {
@@ -36,7 +36,7 @@ export const useAPE = () => {
       toast({ title: "Berhasil", description: "Data APE berhasil ditambahkan" });
       fetchAPE();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Gagal menambahkan APE';
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal menambahkan APE'));
       setError(errorMessage);
       toast({ title: "Error", description: errorMessage, variant: "destructive" });
       throw err;
@@ -50,7 +50,7 @@ export const useAPE = () => {
       toast({ title: "Berhasil", description: "Data APE berhasil diupdate" });
       fetchAPE();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Gagal mengupdate APE';
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal mengupdate APE'));
       setError(errorMessage);
       toast({ title: "Error", description: errorMessage, variant: "destructive" });
       throw err;
@@ -64,7 +64,7 @@ export const useAPE = () => {
       toast({ title: "Berhasil", description: "Data APE berhasil dihapus" });
       fetchAPE();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Gagal menghapus APE';
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal menghapus APE'));
       setError(errorMessage);
       toast({ title: "Error", description: errorMessage, variant: "destructive" });
       throw err;

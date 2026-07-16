@@ -20,12 +20,12 @@ export const useAnecdotes = () => {
       setAnecdotes(result.data);
       setPagination(result.pagination);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Gagal mengambil data anekdot';
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal mengambil data anekdot'));
       setError(errorMessage);
       toast({
         title: "Error",
         description: errorMessage,
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
@@ -39,7 +39,7 @@ export const useAnecdotes = () => {
       toast({ title: "Berhasil", description: "Anekdot berhasil ditambahkan" });
       fetchAnecdotes();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Gagal menambahkan anekdot';
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal menambahkan anekdot'));
       setError(errorMessage);
       toast({ title: "Error", description: errorMessage, variant: "destructive" });
       throw err;
@@ -53,7 +53,7 @@ export const useAnecdotes = () => {
       toast({ title: "Berhasil", description: "Anekdot berhasil diupdate" });
       fetchAnecdotes();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Gagal mengupdate anekdot';
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal mengupdate anekdot'));
       setError(errorMessage);
       toast({ title: "Error", description: errorMessage, variant: "destructive" });
       throw err;
@@ -67,7 +67,7 @@ export const useAnecdotes = () => {
       toast({ title: "Berhasil", description: "Anekdot berhasil dihapus" });
       fetchAnecdotes();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Gagal menghapus anekdot';
+      const errorMessage = (err as any)?.message || (err as any)?.error || (typeof err === 'string' ? err : (err instanceof Error ? err.message : 'Gagal menghapus anekdot'));
       setError(errorMessage);
       toast({ title: "Error", description: errorMessage, variant: "destructive" });
       throw err;

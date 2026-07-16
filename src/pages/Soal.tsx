@@ -806,39 +806,88 @@ const Soal = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredSubjects.map(subject => (
-          <Card key={subject.id} className="p-6 hover:shadow-md transition-shadow cursor-pointer border-t-4 border-t-primary" onClick={() => handleEditList(subject)}>
-            <div className="flex justify-between items-start mb-4">
-              <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
-                <FileText className="w-6 h-6" />
+          <Card
+            key={subject.id}
+            className="flex flex-col p-0 overflow-hidden hover:shadow-lg transition-all duration-200 cursor-pointer border-t-4 border-t-primary"
+            onClick={() => handleEditList(subject)}
+          >
+            {/* Card Header */}
+            <div className="flex justify-between items-start p-5 pb-3">
+              <div className="w-11 h-11 bg-primary/10 text-primary rounded-xl flex items-center justify-center shrink-0">
+                <FileText className="w-5 h-5" />
               </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setListPreviewSubject(null); (async () => {
-                  try {
-                    const detail = await soalService.getById(subject.id);
-                    setListPreviewSubject(detail);
-                  } catch (err) { toast.error("Gagal memuat preview"); }
-                })(); }} title="Preview Soal" className="text-gray-600 hover:bg-gray-100 border-gray-200 h-8 px-2 text-xs">
-                  <Eye className="w-3.5 h-3.5 mr-1" /> Preview
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                onClick={(e) => { e.stopPropagation(); handleDeleteList(subject.id); }}
+                title="Hapus Topik"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Card Body */}
+            <div className="px-5 pb-4 flex-1">
+              <h3 className="text-lg font-bold mb-1 line-clamp-2 leading-snug">{subject.section}</h3>
+              <p className="text-muted-foreground text-sm">
+                {subject.questions?.length ?? subject.totalQuestions ?? 0} section (teks &amp; foto)
+              </p>
+            </div>
+
+            {/* Card Footer — Action Buttons */}
+            <div
+              className="border-t border-slate-100 px-4 py-3 flex items-center justify-between gap-2 bg-slate-50/60"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-1.5">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs bg-white"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setListPreviewSubject(null);
+                    (async () => {
+                      try {
+                        const detail = await soalService.getById(subject.id);
+                        setListPreviewSubject(detail);
+                      } catch { toast.error("Gagal memuat preview"); }
+                    })();
+                  }}
+                  title="Preview Soal"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  Preview
                 </Button>
-                <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleDownloadPdf(subject); }} title="Download PDF" className="h-8 px-2 text-xs">
-                  <Download className="w-3.5 h-3.5 mr-1" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs bg-white"
+                  onClick={(e) => { e.stopPropagation(); handleDownloadPdf(subject); }}
+                  title="Download PDF"
+                >
+                  <Download className="w-3.5 h-3.5" />
                   PDF
                 </Button>
-                <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleExportDocx(subject); }} title="Download DOCX" className="h-8 px-2 text-xs">
-                  <Download className="w-3.5 h-3.5 mr-1" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs bg-white"
+                  onClick={(e) => { e.stopPropagation(); handleExportDocx(subject); }}
+                  title="Download DOCX"
+                >
+                  <Download className="w-3.5 h-3.5" />
                   DOCX
                 </Button>
-                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDeleteList(subject.id); }} title="Hapus Topik" className="h-8 w-8 p-0">
-                  <Trash2 className="w-4 h-4 text-destructive" />
-                </Button>
               </div>
-            </div>
-            <h3 className="text-xl font-bold mb-2 line-clamp-2">{subject.section}</h3>
-            <p className="text-muted-foreground text-sm mb-6">
-              Memiliki {subject.questions?.length ?? subject.totalQuestions ?? 0} section (teks & foto)
-            </p>
-            <div className="w-full text-center text-sm font-medium text-primary flex items-center justify-center gap-1">
-              Buka Soal <ChevronRight className="w-4 h-4" />
+
+              <div
+                className="text-xs font-medium text-primary flex items-center gap-0.5 hover:gap-1.5 transition-all"
+                onClick={() => handleEditList(subject)}
+              >
+                Buka <ChevronRight className="w-3.5 h-3.5" />
+              </div>
             </div>
           </Card>
         ))}

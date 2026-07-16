@@ -103,10 +103,23 @@ export function APEForm({ open, onOpenChange, onSubmit, ape }: APEFormProps) {
   };
 
   const handleSubmit = async (data: CreateAPEData) => {
-    await onSubmit(data);
-    form.reset();
-    setPreviewUrl(null);
-    onOpenChange(false);
+    try {
+      await onSubmit(data);
+      form.reset();
+      setPreviewUrl(null);
+      onOpenChange(false);
+    } catch (err: any) {
+      if (err && err.errors && err.errors.fieldErrors) {
+        Object.entries(err.errors.fieldErrors).forEach(([field, messages]) => {
+          const fieldName = field as any;
+          const msg = Array.isArray(messages) ? messages[0] : String(messages);
+          form.setError(fieldName, {
+            type: "server",
+            message: msg
+          });
+        });
+      }
+    }
   };
 
   return (
